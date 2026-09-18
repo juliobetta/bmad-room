@@ -1,0 +1,366 @@
+<title>BMad Chat UI, Forged</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,600;9..144,700&family=Source+Sans+3:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap');
+
+  :root {
+    --ink-900: #1b1f27;
+    --ink-700: #2c313d;
+    --ink-500: #4b515f;
+    --paper-50: #f7f4ec;
+    --paper-100: #efe9d9;
+    --paper-200: #e3dac3;
+    --ember-500: #b85c2c;
+    --ember-700: #8a4118;
+    --brass-400: #a9863f;
+    --moss-500: #5f7a52;
+
+    --bg: var(--paper-50);
+    --bg-raised: #ffffff;
+    --text: var(--ink-900);
+    --text-muted: var(--ink-500);
+    --border: var(--paper-200);
+    --accent: var(--ember-500);
+    --accent-ink: var(--ember-700);
+    --brass: var(--brass-400);
+    --kill: #9a3b32;
+    --lock: var(--moss-500);
+    --shadow: 0 1px 2px rgba(27,31,39,0.06), 0 8px 24px rgba(27,31,39,0.08);
+  }
+
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --bg: #15181f;
+      --bg-raised: #1d212b;
+      --text: #ece7db;
+      --text-muted: #9aa0ad;
+      --border: #323847;
+      --accent: #d97a45;
+      --accent-ink: #f0a874;
+      --brass: #c9a76a;
+      --kill: #d3766b;
+      --lock: #86a875;
+      --shadow: 0 1px 2px rgba(0,0,0,0.3), 0 12px 32px rgba(0,0,0,0.4);
+    }
+  }
+  :root[data-theme="dark"] {
+    --bg: #15181f;
+    --bg-raised: #1d212b;
+    --text: #ece7db;
+    --text-muted: #9aa0ad;
+    --border: #323847;
+    --accent: #d97a45;
+    --accent-ink: #f0a874;
+    --brass: #c9a76a;
+    --kill: #d3766b;
+    --lock: #86a875;
+    --shadow: 0 1px 2px rgba(0,0,0,0.3), 0 12px 32px rgba(0,0,0,0.4);
+  }
+
+  * { box-sizing: border-box; }
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'Source Sans 3', -apple-system, BlinkMacSystemFont, sans-serif;
+    font-size: 16px;
+    line-height: 1.6;
+    margin: 0;
+    padding: 64px 24px 96px;
+  }
+  .page {
+    max-width: 760px;
+    margin: 0 auto;
+  }
+  .masthead {
+    text-align: center;
+    margin-bottom: 8px;
+  }
+  .eyebrow {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 0.72rem;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: var(--text-muted);
+  }
+  h1 {
+    font-family: 'Fraunces', Georgia, serif;
+    font-weight: 600;
+    font-size: clamp(2rem, 5vw, 2.9rem);
+    letter-spacing: -0.01em;
+    text-wrap: balance;
+    margin: 10px 0 6px;
+  }
+  .subhead {
+    color: var(--text-muted);
+    font-size: 1.05rem;
+    max-width: 58ch;
+    margin: 0 auto;
+    text-wrap: balance;
+  }
+
+  /* --- seal --- */
+  .seal-wrap {
+    display: flex;
+    justify-content: center;
+    margin: 40px 0 48px;
+  }
+  .seal-wrap svg { width: 178px; height: 178px; filter: drop-shadow(0 6px 14px rgba(0,0,0,0.18)); }
+
+  section { margin: 52px 0; }
+  h2 {
+    font-family: 'Fraunces', Georgia, serif;
+    font-weight: 600;
+    font-size: 1.5rem;
+    margin: 0 0 18px;
+    display: flex;
+    align-items: baseline;
+    gap: 10px;
+  }
+  h2 .num {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 0.85rem;
+    color: var(--accent-ink);
+    font-weight: 500;
+  }
+  p { margin: 0 0 14px; }
+  .lede {
+    font-size: 1.08rem;
+    background: var(--bg-raised);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 22px 24px;
+    box-shadow: var(--shadow);
+  }
+  code {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 0.88em;
+    background: var(--paper-100);
+    padding: 0.1em 0.4em;
+    border-radius: 4px;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) code { background: #262b36; }
+  }
+  :root[data-theme="dark"] code { background: #262b36; }
+
+  /* --- timeline of pivots --- */
+  .timeline { display: flex; flex-direction: column; gap: 0; border-left: 2px solid var(--border); margin-left: 8px; padding-left: 26px; }
+  .beat { position: relative; padding-bottom: 28px; }
+  .beat:last-child { padding-bottom: 0; }
+  .beat::before {
+    content: '';
+    position: absolute;
+    left: -32px;
+    top: 4px;
+    width: 11px;
+    height: 11px;
+    border-radius: 50%;
+    background: var(--bg);
+    border: 2px solid var(--brass);
+  }
+  .beat.pivot::before { border-color: var(--accent); background: var(--accent); }
+  .beat-label { font-family: 'IBM Plex Mono', monospace; font-size: 0.72rem; letter-spacing: 0.06em; text-transform: uppercase; color: var(--accent-ink); margin-bottom: 4px; }
+  .beat p { margin: 0; color: var(--text); }
+  .beat .sub { color: var(--text-muted); font-size: 0.94rem; }
+
+  /* --- decision cards --- */
+  .cards { display: flex; flex-direction: column; gap: 12px; }
+  .card {
+    background: var(--bg-raised);
+    border: 1px solid var(--border);
+    border-left: 3px solid var(--lock);
+    border-radius: 8px;
+    padding: 16px 18px;
+    box-shadow: var(--shadow);
+  }
+  .card p { margin: 0; }
+  .card .tag {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 0.68rem;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--lock);
+    display: block;
+    margin-bottom: 6px;
+  }
+
+  .rejects .card { border-left-color: var(--kill); }
+  .rejects .card .tag { color: var(--kill); }
+
+  .open .card { border-left-color: var(--brass); }
+  .open .card .tag { color: var(--brass); }
+
+  /* --- persona roster --- */
+  .roster { display: grid; grid-template-columns: repeat(auto-fill, minmax(210px, 1fr)); gap: 14px; }
+  .persona {
+    background: var(--bg-raised);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 16px;
+    box-shadow: var(--shadow);
+  }
+  .persona .top { display: flex; align-items: center; gap: 10px; margin-bottom: 8px; }
+  .persona .icon { font-size: 1.5rem; line-height: 1; }
+  .persona .name { font-weight: 600; }
+  .persona .role { font-size: 0.82rem; color: var(--text-muted); }
+  .persona .quote { font-size: 0.9rem; color: var(--text-muted); font-style: italic; margin-top: 6px; }
+
+  footer {
+    margin-top: 64px;
+    text-align: center;
+    color: var(--text-muted);
+    font-size: 0.85rem;
+    font-family: 'IBM Plex Mono', monospace;
+  }
+
+  @media (max-width: 480px) {
+    body { padding: 40px 16px 72px; }
+    .roster { grid-template-columns: 1fr 1fr; }
+  }
+</style>
+
+<div class="page">
+
+  <div class="masthead">
+    <div class="eyebrow">BMad Forge · Session Record</div>
+    <h1>BMad Chat UI, Forged</h1>
+    <p class="subhead">A half-idea about copying another app's multi-agent office arrived here as a scoped, evidenced plan for talking to BMad personas across every company project — after three real pivots and one killed architecture.</p>
+  </div>
+
+  <div class="seal-wrap" role="img" aria-label="Wax seal stamped HARDENED">
+    <svg viewBox="0 0 200 200" xmlns="http://www.w3.org/2000/svg">
+      <defs>
+        <radialGradient id="wax" cx="38%" cy="32%" r="75%">
+          <stop offset="0%" stop-color="#d97a45"/>
+          <stop offset="55%" stop-color="#b85c2c"/>
+          <stop offset="100%" stop-color="#7c3c16"/>
+        </radialGradient>
+      </defs>
+      <path fill="url(#wax)" d="M100 10
+        C112 10 118 22 129 20
+        C140 18 147 29 155 38
+        C163 47 178 47 180 60
+        C182 73 172 80 176 92
+        C180 104 192 112 188 124
+        C184 136 170 137 168 150
+        C166 163 175 176 163 184
+        C151 192 141 181 129 186
+        C117 191 112 202 100 202
+        C88 202 83 191 71 186
+        C59 181 49 192 37 184
+        C25 176 34 163 32 150
+        C30 137 16 136 12 124
+        C8 112 20 104 24 92
+        C28 80 18 73 20 60
+        C22 47 37 47 45 38
+        C53 29 60 18 71 20
+        C82 22 88 10 100 10 Z"/>
+      <circle cx="100" cy="103" r="66" fill="none" stroke="#5a2a10" stroke-width="1" opacity="0.35"/>
+      <text x="100" y="94" text-anchor="middle" font-family="Fraunces, Georgia, serif" font-weight="700" font-size="27" fill="#f4e6d8" letter-spacing="1">HARDENED</text>
+      <text x="100" y="118" text-anchor="middle" font-family="IBM Plex Mono, monospace" font-size="9" letter-spacing="3" fill="#f4e6d8" opacity="0.85">BMAD FORGE</text>
+      <path d="M60 130 Q100 145 140 130" stroke="#f4e6d8" stroke-width="1.2" fill="none" opacity="0.6"/>
+    </svg>
+  </div>
+
+  <section>
+    <h2><span class="num">01</span> What survived</h2>
+    <p class="lede">A chat-app UI for talking to BMad personas across your company's projects — one room per project, each persona (Mary, John, Winston, Amelia, Sally…) its own persistent contact, party mode as a group chat. It's a <em>skin</em> on real BMad/Claude-Code execution, not a new agent engine, and it inherits a real, evidenced fix for a bug that's been quietly breaking <code>@</code> shortcuts, memory, and artifact routing across your projects.</p>
+  </section>
+
+  <section>
+    <h2><span class="num">02</span> How it got here</h2>
+    <div class="timeline">
+      <div class="beat pivot">
+        <div class="beat-label">Started as</div>
+        <p>Clone Munder Difflin's architecture for BMad — separate CLI processes per agent, file-based mailbox, office-floor visualization.</p>
+      </div>
+      <div class="beat pivot">
+        <div class="beat-label">Pivot</div>
+        <p>Rejected the separate-process hive. BMad personas stay running as skills inside real sessions — nothing to fork there.</p>
+      </div>
+      <div class="beat">
+        <div class="beat-label">Checked</div>
+        <p class="sub">Evaluated Munder Difflin's paid tiers (Free / Pro $150/yr / Teams $39/seat) against this idea. Killed — not a sellable product, and Teams' only real moat (cross-device messaging) doesn't apply here anyway.</p>
+      </div>
+      <div class="beat pivot">
+        <div class="beat-label">Reveal</div>
+        <p>The actual problem wasn't visualization — it was coordinating BMad across projects that can't have BMad installed. <code>bmad-hub</code> already exists and attempts this.</p>
+      </div>
+      <div class="beat">
+        <div class="beat-label">Diagnosed</div>
+        <p class="sub">Read <code>bmad-hub</code>'s own RFC. Found a self-documented known limitation: session cwd is a symlink dir, not the real checkout, so <code>@</code> resolution silently fails. Root cause, not a UI gap.</p>
+      </div>
+      <div class="beat pivot">
+        <div class="beat-label">Pivot</div>
+        <p>"I want it to feel like a chat app with real people" — named plainly as interface excitement, not an unmet capability. Chose the cheap path: a chat skin over real execution, not a rebuilt runtime.</p>
+      </div>
+      <div class="beat">
+        <div class="beat-label">Landed</div>
+        <p class="sub">One room per project, each persona a persistent contact, sync/routing correctness as invisible foundation rather than its own dashboard.</p>
+      </div>
+    </div>
+  </section>
+
+  <section>
+    <h2><span class="num">03</span> Locked decisions</h2>
+    <div class="cards">
+      <div class="card"><span class="tag">Execution</span><p>Real BMad-in-Claude-Code underneath. The chat UI renders it; it does not reimplement agent execution on a separate stack.</p></div>
+      <div class="card"><span class="tag">Root fix</span><p>Launch sessions with cwd set to the real project checkout, not a symlink directory. Overlay canonical skills/<code>_bmad</code> via symlinks excluded through <code>.git/info/exclude</code> — never a committed <code>.gitignore</code>.</p></div>
+      <div class="card"><span class="tag">Scope</span><p>Context resolution and routing correctness are plumbing, not a product screen. The chat UI is the only surface; sync state shows as inline system messages.</p></div>
+      <div class="card"><span class="tag">Structure</span><p>One room per project, not one cross-company thread — matches how memory and context are already scoped.</p></div>
+      <div class="card"><span class="tag">Cast</span><p>Each BMad persona is its own persistent contact per project. Party mode becomes a group chat room with several persona contacts present.</p></div>
+      <div class="card"><span class="tag">License</span><p>FOSS release. No paid tiers, no monetization planning.</p></div>
+    </div>
+  </section>
+
+  <section class="rejects">
+    <h2><span class="num">04</span> Rejected, and why</h2>
+    <div class="cards">
+      <div class="card"><span class="tag">Killed</span><p>Munder Difflin's process-per-agent hive (node-pty, mailbox, GOD orchestrator, office floor) — the wrong-shaped fix for a single-session system.</p></div>
+      <div class="card"><span class="tag">Killed</span><p>Paid tiers modeled on Free/Pro/Teams — no sellable-product intent, and the one paid feature with a real moat (cross-device messaging) doesn't map onto this scope.</p></div>
+      <div class="card"><span class="tag">Killed</span><p>A standalone sync/status dashboard — absorbed into the chat UI as inline system messages instead of its own screen.</p></div>
+      <div class="card"><span class="tag">Killed</span><p>GitHub sync as a requirement — <code>bmad-hub</code> is already a normal git repo with a remote; plain git already covers it.</p></div>
+      <div class="card"><span class="tag">Passed over</span><p>A full custom agent runtime on the Agent SDK, independent of Claude Code — more capability than the actual want (interface feel) justified.</p></div>
+    </div>
+  </section>
+
+  <section class="open">
+    <h2><span class="num">05</span> Open for the next phase</h2>
+    <div class="cards">
+      <div class="card"><span class="tag">Technical</span><p>How bidirectional real-time chat is actually driven: pty-wrapping a real Claude Code process, vs. driving sessions via the Claude Agent SDK's structured message stream.</p></div>
+      <div class="card"><span class="tag">Home</span><p>Whether this extends <code>bmad-hub</code> in place (shares its registry, canonical skills, per-project storage) or lives in a fresh repo. Leaning toward extending — not firmly locked.</p></div>
+    </div>
+  </section>
+
+  <section>
+    <h2><span class="num">06</span> Who pressure-tested it</h2>
+    <div class="roster">
+      <div class="persona">
+        <div class="top"><span class="icon">🏗️</span><div><div class="name">Winston</div><div class="role">System Architect</div></div></div>
+        <div class="quote">Named the structural fix and the risk in symlinking into a real checkout.</div>
+      </div>
+      <div class="persona">
+        <div class="top"><span class="icon">🎨</span><div><div class="name">Sally</div><div class="role">UX Designer</div></div></div>
+        <div class="quote">Pushed for the concrete pain behind "visual," not the feature list.</div>
+      </div>
+      <div class="persona">
+        <div class="top"><span class="icon">📋</span><div><div class="name">John</div><div class="role">Product Manager</div></div></div>
+        <div class="quote">"Is this a job the chat UI does, or a feeling?"</div>
+      </div>
+      <div class="persona">
+        <div class="top"><span class="icon">🔬</span><div><div class="name">Dr. Quinn</div><div class="role">Master Problem Solver</div></div></div>
+        <div class="quote">Asked the JTBD question that had no capability answer — and got an honest one.</div>
+      </div>
+      <div class="persona">
+        <div class="top"><span class="icon">👤</span><div><div class="name">Priya</div><div class="role">Generated — jaded infra engineer</div></div></div>
+        <div class="quote">"Are you chasing the demo, or the capability?"</div>
+      </div>
+      <div class="persona">
+        <div class="top"><span class="icon">👤</span><div><div class="name">Marcus</div><div class="role">Generated — terminal power user</div></div></div>
+        <div class="quote">Unconvinced a GUI fixes anything a working <code>@</code> reference wouldn't.</div>
+      </div>
+    </div>
+  </section>
+
+  <footer>bmad-agent-hive · forged 2026-09-17 · memlog + forged-idea.md in this workspace</footer>
+
+</div>

@@ -1,0 +1,111 @@
+<!doctype html>
+<html>
+<head>
+<meta charset="utf-8">
+<title>BMad Chat UI — Party-mode channel</title>
+<!--
+  Governing spine sections:
+  - DESIGN.md: Colors, Typography (mono for system message), Components (message-bubble,
+    system-message)
+  - EXPERIENCE.md: Information Architecture (Create channel, Party-mode channel),
+    Component Patterns (Message bubble, System message, Channel composer),
+    State Patterns (Channel being created), Voice and Tone (per-persona voice),
+    Key Flows > Flow 2 steps 1-4
+  Terminal Green, light mode only (per directive — no dark duplication needed here).
+-->
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: Inter, system-ui, -apple-system, sans-serif;
+    background: #e7ebe8;
+    padding: 24px;
+  }
+  .frame-label {
+    font-size: 12px; font-weight: 600; color: #445048;
+    margin-bottom: 8px; letter-spacing: 0.02em; text-transform: uppercase;
+  }
+  .browser-frame {
+    width: 900px; border-radius: 10px; overflow: hidden;
+    border: 1px solid #d6ded8; box-shadow: 0 1px 0 rgba(0,0,0,0.06);
+  }
+  .browser-chrome { height: 34px; background: #eef1ee; display: flex; align-items: center; padding: 0 12px; gap: 6px; }
+  .dot { width: 10px; height: 10px; border-radius: 9999px; }
+  .app-shell { display: flex; height: 560px; }
+
+  .rail { width: 56px; background: #eef1ee; border-right: 1px solid #d6ded8; display: flex; flex-direction: column; align-items: center; padding: 12px 0; gap: 10px; }
+  .rail-icon { width: 40px; height: 40px; border-radius: 10px; display: flex; align-items: center; justify-content: center; font-size: 13px; font-weight: 600; background: #ffffff; color: #14201a; border: 1px solid #d6ded8; position: relative; }
+  .rail-icon.active { background: #1f7a4d; color: #fff; border-color: #1f7a4d; }
+  .rail-icon.active .indicator { position: absolute; left: -13px; top: 8px; bottom: 8px; width: 3px; border-radius: 9999px; background: #0f8f5c; }
+  .rail-add { width: 40px; height: 40px; border-radius: 10px; display: flex; align-items: center; justify-content: center; font-size: 18px; color: #5c6b62; border: 1px dashed #b9c4bb; }
+
+  .sidebar { width: 220px; background: #f4f6f4; border-right: 1px solid #d6ded8; padding: 16px 0; }
+  .sidebar-title { font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.04em; color: #5c6b62; padding: 0 16px 8px; display: flex; justify-content: space-between; align-items: center; }
+  .sidebar-add { font-size: 13px; color: #1f7a4d; font-weight: 700; }
+  .channel-row { display: flex; align-items: center; gap: 8px; padding: 8px 16px; }
+  .channel-row.active { background: #eef6f0; }
+  .channel-hash { color: #5c6b62; font-weight: 600; }
+  .channel-name { font-size: 13px; font-weight: 600; color: #14201a; }
+  .persona-row { display: flex; align-items: center; gap: 10px; padding: 6px 16px; opacity: 0.55; }
+  .persona-avatar { width: 26px; height: 26px; border-radius: 9px; background: #1f7a4d; color: #fff; display: flex; align-items: center; justify-content: center; font-size: 12px; flex-shrink: 0; }
+  .persona-name { font-size: 12.5px; font-weight: 600; color: #14201a; }
+
+  .thread { flex: 1; display: flex; flex-direction: column; background: #fff; min-width: 0; }
+  .thread-header { height: 60px; flex-shrink: 0; border-bottom: 1px solid #d6ded8; padding: 0 20px; display: flex; flex-direction: column; justify-content: center; gap: 2px; }
+  .thread-header-name { font-size: 14px; font-weight: 700; color: #14201a; }
+  .thread-header-sub { font-size: 11.5px; color: #5c6b62; }
+
+  .messages { flex: 1; padding: 20px; display: flex; flex-direction: column; gap: 16px; }
+  .system-msg { font-family: 'JetBrains Mono', ui-monospace, monospace; font-size: 12px; color: #5c6b62; text-align: center; padding: 4px 0; }
+  .msg { display: flex; gap: 10px; align-items: flex-start; }
+  .msg-body { max-width: 520px; }
+  .msg-name { font-size: 13px; font-weight: 600; color: #14201a; margin-bottom: 4px; }
+  .bubble { background: #f4f6f4; color: #14201a; border-radius: 10px; padding: 10px 14px; font-size: 14px; line-height: 1.5; }
+
+  .composer { flex-shrink: 0; padding: 16px 20px 20px; border-top: 1px solid #d6ded8; }
+  .composer-box { border-radius: 10px; border: 1px solid #d6ded8; background: #f4f6f4; color: #5c6b62; padding: 12px 14px; font-size: 13px; }
+</style>
+</head>
+<body>
+
+<div class="frame-label">Terminal Green — Light — Party-mode channel</div>
+<div class="browser-frame">
+  <div class="browser-chrome">
+    <span class="dot" style="background:#e0685c;"></span>
+    <span class="dot" style="background:#e0b84f;"></span>
+    <span class="dot" style="background:#5fbf7a;"></span>
+  </div>
+  <div class="app-shell">
+    <div class="rail">
+      <div class="rail-icon active">bmad<div class="indicator"></div></div>
+      <div class="rail-icon">apex</div>
+      <div class="rail-add">+</div>
+    </div>
+    <div class="sidebar">
+      <div class="sidebar-title">Channels <span class="sidebar-add">+</span></div>
+      <div class="channel-row active"><span class="channel-hash">#</span><span class="channel-name">pty-wrapping-approach</span></div>
+      <div class="sidebar-title" style="margin-top:14px;">Personas</div>
+      <div class="persona-row"><div class="persona-avatar">M</div><span class="persona-name">Mary</span></div>
+      <div class="persona-row"><div class="persona-avatar">J</div><span class="persona-name">John</span></div>
+      <div class="persona-row"><div class="persona-avatar">S</div><span class="persona-name">Sally</span></div>
+      <div class="persona-row"><div class="persona-avatar">W</div><span class="persona-name">Winston</span></div>
+      <div class="persona-row"><div class="persona-avatar">A</div><span class="persona-name">Amelia</span></div>
+    </div>
+    <div class="thread">
+      <div class="thread-header">
+        <span class="thread-header-name"># pty-wrapping-approach</span>
+        <span class="thread-header-sub">Winston, Amelia</span>
+      </div>
+      <div class="messages">
+        <div class="system-msg">channel created from: "figure out how the local backend should pty-wrap the Claude Code CLI process" — Winston and Amelia added</div>
+        <div class="msg"><div class="persona-avatar">W</div><div class="msg-body"><div class="msg-name">Winston</div><div class="bubble">trade-off here is fidelity vs. complexity — pty-wrapping the real CLI gives us exact behavior parity, but parsing terminal output for structured rendering is real engineering. I'd rather pay that cost once than maintain a second, drifting execution path.</div></div></div>
+        <div class="msg"><div class="persona-avatar">A</div><div class="msg-body"><div class="msg-name">Amelia</div><div class="bubble">backend/pty-session.ts wraps node-pty around `claude`, ANSI passthrough handled in Thread.tsx. AC: DM thread renders identical output to a real terminal for the same session.</div></div></div>
+      </div>
+      <div class="composer">
+        <div class="composer-box">Message #pty-wrapping-approach…</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+</body>
+</html>

@@ -1,0 +1,575 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>BMad Chat UI — Color Theme Directions</title>
+<style>
+  :root {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  }
+  body {
+    margin: 0;
+    padding: 32px;
+    background: #e9e9ec;
+    color: #1a1a1a;
+  }
+  h1 {
+    font-size: 22px;
+    margin: 0 0 4px;
+  }
+  p.sub {
+    margin: 0 0 32px;
+    color: #55555c;
+    font-size: 14px;
+  }
+  .variation {
+    margin-bottom: 48px;
+  }
+  .variation-header {
+    margin-bottom: 12px;
+  }
+  .variation-header h2 {
+    font-size: 17px;
+    margin: 0 0 2px;
+  }
+  .variation-header p {
+    margin: 0;
+    font-size: 13px;
+    color: #55555c;
+  }
+  .modes {
+    display: flex;
+    gap: 20px;
+    flex-wrap: wrap;
+  }
+  .mode-panel {
+    flex: 1 1 420px;
+    min-width: 320px;
+    border-radius: 10px;
+    overflow: hidden;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.15);
+  }
+  .mode-label {
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    padding: 6px 14px;
+    font-weight: 600;
+  }
+  .chips {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    padding: 10px 14px;
+  }
+  .chip {
+    font-size: 10px;
+    padding: 3px 8px;
+    border-radius: 999px;
+    font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+    border: 1px solid rgba(0,0,0,0.12);
+  }
+  .snippet {
+    padding: 14px;
+  }
+  .thread-header {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding-bottom: 10px;
+    margin-bottom: 10px;
+    border-bottom: 1px solid;
+  }
+  .avatar {
+    width: 28px;
+    height: 28px;
+    border-radius: 8px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 12px;
+    font-weight: 700;
+    flex-shrink: 0;
+  }
+  .thread-header .name {
+    font-weight: 600;
+    font-size: 13px;
+  }
+  .thread-header .status {
+    font-size: 11px;
+    margin-left: auto;
+  }
+  .msg {
+    display: flex;
+    gap: 8px;
+    margin-bottom: 10px;
+    font-size: 13px;
+    line-height: 1.45;
+  }
+  .msg .avatar {
+    width: 22px;
+    height: 22px;
+    font-size: 10px;
+    border-radius: 6px;
+  }
+  .msg .bubble-name {
+    font-weight: 600;
+    font-size: 12px;
+    margin-bottom: 2px;
+  }
+  .tool-card {
+    margin: 8px 0 10px 30px;
+    border-radius: 6px;
+    padding: 6px 10px;
+    font-size: 11.5px;
+    font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    border: 1px solid;
+  }
+  .tool-card .chev { opacity: 0.6; }
+</style>
+</head>
+<body>
+
+<h1>BMad Chat UI — color theme directions</h1>
+<p class="sub">5 variations, light + dark side by side. DM-thread snippet: Amelia mid-conversation on a GitHub issue, with one inline tool-call card.</p>
+
+<!-- ================= VARIATION 1: TERMINAL GREEN ================= -->
+<!--
+  Terminal Green — hex values
+  Light: bg #f4f6f4, surface #ffffff, text #14201a, text-muted #5c6b62,
+         primary #1f7a4d, primary-fg #ffffff, accent #0f8f5c, border #d6ded8,
+         tool-card bg #eef6f0, tool-card border #bfe0c9
+  Dark:  bg #0c1210, surface #121b17, text #d9f2e4, text-muted #7fa08e,
+         primary #34d399, primary-fg #04120b, accent #4ade80, border #1f2e27,
+         tool-card bg #0f1c16, tool-card border #22402f
+-->
+<div class="variation">
+  <div class="variation-header">
+    <h2>1. Terminal Green</h2>
+    <p>Developer-terminal coded — phosphor CRT heritage, leans hardest into the "real Claude Code underneath" origin.</p>
+  </div>
+  <div class="modes">
+    <div class="mode-panel" style="background:#f4f6f4;">
+      <div class="mode-label" style="background:#e2ebe4;color:#1f7a4d;">Light</div>
+      <div class="chips">
+        <span class="chip" style="background:#ffffff;color:#14201a;">bg #f4f6f4</span>
+        <span class="chip" style="background:#ffffff;color:#14201a;">surface #ffffff</span>
+        <span class="chip" style="background:#1f7a4d;color:#fff;border-color:#1f7a4d;">primary #1f7a4d</span>
+        <span class="chip" style="background:#0f8f5c;color:#fff;border-color:#0f8f5c;">accent #0f8f5c</span>
+        <span class="chip" style="background:#fff;color:#5c6b62;">muted #5c6b62</span>
+      </div>
+      <div class="snippet" style="background:#ffffff;color:#14201a;">
+        <div class="thread-header" style="border-color:#d6ded8;">
+          <div class="avatar" style="background:#1f7a4d;color:#fff;">A</div>
+          <span class="name">Amelia</span>
+          <span class="status" style="color:#0f8f5c;">● working</span>
+        </div>
+        <div class="msg">
+          <div class="avatar" style="background:#1f7a4d;color:#fff;">A</div>
+          <div>
+            <div class="bubble-name">Amelia</div>
+            morning — pulled up issue #142, looks like the auth token refresh is racing the logout call. digging in.
+          </div>
+        </div>
+        <div class="tool-card" style="background:#eef6f0;border-color:#bfe0c9;color:#1f7a4d;">
+          <span class="chev">▸</span> Editing src/api/auth.ts
+        </div>
+        <div class="msg">
+          <div class="avatar" style="background:#1f7a4d;color:#fff;">A</div>
+          <div>
+            <div class="bubble-name">Amelia</div>
+            found it — refresh isn't cancelled on logout. want me to add an AbortController, or just guard the write?
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="mode-panel" style="background:#0c1210;">
+      <div class="mode-label" style="background:#152019;color:#34d399;">Dark</div>
+      <div class="chips">
+        <span class="chip" style="background:#121b17;color:#d9f2e4;border-color:#1f2e27;">bg #0c1210</span>
+        <span class="chip" style="background:#121b17;color:#d9f2e4;border-color:#1f2e27;">surface #121b17</span>
+        <span class="chip" style="background:#34d399;color:#04120b;border-color:#34d399;">primary #34d399</span>
+        <span class="chip" style="background:#4ade80;color:#04120b;border-color:#4ade80;">accent #4ade80</span>
+        <span class="chip" style="background:#121b17;color:#7fa08e;border-color:#1f2e27;">muted #7fa08e</span>
+      </div>
+      <div class="snippet" style="background:#121b17;color:#d9f2e4;">
+        <div class="thread-header" style="border-color:#1f2e27;">
+          <div class="avatar" style="background:#34d399;color:#04120b;">A</div>
+          <span class="name">Amelia</span>
+          <span class="status" style="color:#4ade80;">● working</span>
+        </div>
+        <div class="msg">
+          <div class="avatar" style="background:#34d399;color:#04120b;">A</div>
+          <div>
+            <div class="bubble-name">Amelia</div>
+            morning — pulled up issue #142, looks like the auth token refresh is racing the logout call. digging in.
+          </div>
+        </div>
+        <div class="tool-card" style="background:#0f1c16;border-color:#22402f;color:#4ade80;">
+          <span class="chev">▸</span> Editing src/api/auth.ts
+        </div>
+        <div class="msg">
+          <div class="avatar" style="background:#34d399;color:#04120b;">A</div>
+          <div>
+            <div class="bubble-name">Amelia</div>
+            found it — refresh isn't cancelled on logout. want me to add an AbortController, or just guard the write?
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ================= VARIATION 2: WARM STUDIO ================= -->
+<!--
+  Warm Studio — hex values
+  Light: bg #fbf5ef, surface #ffffff, text #2b1d12, text-muted #8a7563,
+         primary #d9622b, primary-fg #ffffff, accent #f2a541, border #ede0d2,
+         tool-card bg #fdf1e4, tool-card border #f0d3ab
+  Dark:  bg #1c140d, surface #26190f, text #f5e6d6, text-muted #b89a7d,
+         primary #f2884d, primary-fg #1c0f06, accent #ffc069, border #3a2818,
+         tool-card bg #221609, tool-card border #4a3116
+-->
+<div class="variation">
+  <div class="variation-header">
+    <h2>2. Warm Studio</h2>
+    <p>Friendly and approachable — softens the developer-tool edge, reads more like a craft/creative chat app.</p>
+  </div>
+  <div class="modes">
+    <div class="mode-panel" style="background:#fbf5ef;">
+      <div class="mode-label" style="background:#f3e2cf;color:#d9622b;">Light</div>
+      <div class="chips">
+        <span class="chip" style="background:#fff;color:#2b1d12;">bg #fbf5ef</span>
+        <span class="chip" style="background:#fff;color:#2b1d12;">surface #ffffff</span>
+        <span class="chip" style="background:#d9622b;color:#fff;border-color:#d9622b;">primary #d9622b</span>
+        <span class="chip" style="background:#f2a541;color:#2b1d12;border-color:#f2a541;">accent #f2a541</span>
+        <span class="chip" style="background:#fff;color:#8a7563;">muted #8a7563</span>
+      </div>
+      <div class="snippet" style="background:#ffffff;color:#2b1d12;">
+        <div class="thread-header" style="border-color:#ede0d2;">
+          <div class="avatar" style="background:#d9622b;color:#fff;">A</div>
+          <span class="name">Amelia</span>
+          <span class="status" style="color:#d9622b;">● working</span>
+        </div>
+        <div class="msg">
+          <div class="avatar" style="background:#d9622b;color:#fff;">A</div>
+          <div>
+            <div class="bubble-name">Amelia</div>
+            morning — pulled up issue #142, looks like the auth token refresh is racing the logout call. digging in.
+          </div>
+        </div>
+        <div class="tool-card" style="background:#fdf1e4;border-color:#f0d3ab;color:#a34d1e;">
+          <span class="chev">▸</span> Editing src/api/auth.ts
+        </div>
+        <div class="msg">
+          <div class="avatar" style="background:#d9622b;color:#fff;">A</div>
+          <div>
+            <div class="bubble-name">Amelia</div>
+            found it — refresh isn't cancelled on logout. want me to add an AbortController, or just guard the write?
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="mode-panel" style="background:#1c140d;">
+      <div class="mode-label" style="background:#2c1d10;color:#f2884d;">Dark</div>
+      <div class="chips">
+        <span class="chip" style="background:#26190f;color:#f5e6d6;border-color:#3a2818;">bg #1c140d</span>
+        <span class="chip" style="background:#26190f;color:#f5e6d6;border-color:#3a2818;">surface #26190f</span>
+        <span class="chip" style="background:#f2884d;color:#1c0f06;border-color:#f2884d;">primary #f2884d</span>
+        <span class="chip" style="background:#ffc069;color:#1c0f06;border-color:#ffc069;">accent #ffc069</span>
+        <span class="chip" style="background:#26190f;color:#b89a7d;border-color:#3a2818;">muted #b89a7d</span>
+      </div>
+      <div class="snippet" style="background:#26190f;color:#f5e6d6;">
+        <div class="thread-header" style="border-color:#3a2818;">
+          <div class="avatar" style="background:#f2884d;color:#1c0f06;">A</div>
+          <span class="name">Amelia</span>
+          <span class="status" style="color:#ffc069;">● working</span>
+        </div>
+        <div class="msg">
+          <div class="avatar" style="background:#f2884d;color:#1c0f06;">A</div>
+          <div>
+            <div class="bubble-name">Amelia</div>
+            morning — pulled up issue #142, looks like the auth token refresh is racing the logout call. digging in.
+          </div>
+        </div>
+        <div class="tool-card" style="background:#221609;border-color:#4a3116;color:#ffc069;">
+          <span class="chev">▸</span> Editing src/api/auth.ts
+        </div>
+        <div class="msg">
+          <div class="avatar" style="background:#f2884d;color:#1c0f06;">A</div>
+          <div>
+            <div class="bubble-name">Amelia</div>
+            found it — refresh isn't cancelled on logout. want me to add an AbortController, or just guard the write?
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ================= VARIATION 3: SLACK VIOLET ================= -->
+<!--
+  Slack Violet — hex values
+  Light: bg #f6f4f9, surface #ffffff, text #201a2b, text-muted #726a82,
+         primary #5b2c88, primary-fg #ffffff, accent #e01e7b, border #e3ddec,
+         tool-card bg #f4eefa, tool-card border #ddd0ec
+  Dark:  bg #170f22, surface #1f1530, text #ece7f5, text-muted #9c8fb3,
+         primary #a97ee0, primary-fg #170f22, accent #ff4fa3, border #33234a,
+         tool-card bg #1c1330, tool-card border #3a2a52
+-->
+<div class="variation">
+  <div class="variation-header">
+    <h2>3. Slack Violet</h2>
+    <p>Neutral, familiar register — closest to the Slack reference point, safest default for "just works, feels known."</p>
+  </div>
+  <div class="modes">
+    <div class="mode-panel" style="background:#f6f4f9;">
+      <div class="mode-label" style="background:#e9e2f3;color:#5b2c88;">Light</div>
+      <div class="chips">
+        <span class="chip" style="background:#fff;color:#201a2b;">bg #f6f4f9</span>
+        <span class="chip" style="background:#fff;color:#201a2b;">surface #ffffff</span>
+        <span class="chip" style="background:#5b2c88;color:#fff;border-color:#5b2c88;">primary #5b2c88</span>
+        <span class="chip" style="background:#e01e7b;color:#fff;border-color:#e01e7b;">accent #e01e7b</span>
+        <span class="chip" style="background:#fff;color:#726a82;">muted #726a82</span>
+      </div>
+      <div class="snippet" style="background:#ffffff;color:#201a2b;">
+        <div class="thread-header" style="border-color:#e3ddec;">
+          <div class="avatar" style="background:#5b2c88;color:#fff;">A</div>
+          <span class="name">Amelia</span>
+          <span class="status" style="color:#e01e7b;">● working</span>
+        </div>
+        <div class="msg">
+          <div class="avatar" style="background:#5b2c88;color:#fff;">A</div>
+          <div>
+            <div class="bubble-name">Amelia</div>
+            morning — pulled up issue #142, looks like the auth token refresh is racing the logout call. digging in.
+          </div>
+        </div>
+        <div class="tool-card" style="background:#f4eefa;border-color:#ddd0ec;color:#5b2c88;">
+          <span class="chev">▸</span> Editing src/api/auth.ts
+        </div>
+        <div class="msg">
+          <div class="avatar" style="background:#5b2c88;color:#fff;">A</div>
+          <div>
+            <div class="bubble-name">Amelia</div>
+            found it — refresh isn't cancelled on logout. want me to add an AbortController, or just guard the write?
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="mode-panel" style="background:#170f22;">
+      <div class="mode-label" style="background:#221733;color:#a97ee0;">Dark</div>
+      <div class="chips">
+        <span class="chip" style="background:#1f1530;color:#ece7f5;border-color:#33234a;">bg #170f22</span>
+        <span class="chip" style="background:#1f1530;color:#ece7f5;border-color:#33234a;">surface #1f1530</span>
+        <span class="chip" style="background:#a97ee0;color:#170f22;border-color:#a97ee0;">primary #a97ee0</span>
+        <span class="chip" style="background:#ff4fa3;color:#170f22;border-color:#ff4fa3;">accent #ff4fa3</span>
+        <span class="chip" style="background:#1f1530;color:#9c8fb3;border-color:#33234a;">muted #9c8fb3</span>
+      </div>
+      <div class="snippet" style="background:#1f1530;color:#ece7f5;">
+        <div class="thread-header" style="border-color:#33234a;">
+          <div class="avatar" style="background:#a97ee0;color:#170f22;">A</div>
+          <span class="name">Amelia</span>
+          <span class="status" style="color:#ff4fa3;">● working</span>
+        </div>
+        <div class="msg">
+          <div class="avatar" style="background:#a97ee0;color:#170f22;">A</div>
+          <div>
+            <div class="bubble-name">Amelia</div>
+            morning — pulled up issue #142, looks like the auth token refresh is racing the logout call. digging in.
+          </div>
+        </div>
+        <div class="tool-card" style="background:#1c1330;border-color:#3a2a52;color:#c9a6ef;">
+          <span class="chev">▸</span> Editing src/api/auth.ts
+        </div>
+        <div class="msg">
+          <div class="avatar" style="background:#a97ee0;color:#170f22;">A</div>
+          <div>
+            <div class="bubble-name">Amelia</div>
+            found it — refresh isn't cancelled on logout. want me to add an AbortController, or just guard the write?
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ================= VARIATION 4: SIGNAL INDIGO ================= -->
+<!--
+  Signal Indigo — hex values
+  Light: bg #f2f4fb, surface #ffffff, text #121a33, text-muted #5c6690,
+         primary #3143c4, primary-fg #ffffff, accent #00c2d1, border #dde1f2,
+         tool-card bg #eef0fc, tool-card border #ccd3f2
+  Dark:  bg #0a0e1f, surface #101833, text #e3e7fb, text-muted #8790bf,
+         primary #6d7cff, primary-fg #0a0e1f, accent #22e5e5, border #212c52,
+         tool-card bg #0d1330, tool-card border #29356a
+-->
+<div class="variation">
+  <div class="variation-header">
+    <h2>4. Signal Indigo</h2>
+    <p>Bold and distinctive — confident deep-indigo base with an electric-cyan accent, reads more "product" than "tool."</p>
+  </div>
+  <div class="modes">
+    <div class="mode-panel" style="background:#f2f4fb;">
+      <div class="mode-label" style="background:#e2e6f8;color:#3143c4;">Light</div>
+      <div class="chips">
+        <span class="chip" style="background:#fff;color:#121a33;">bg #f2f4fb</span>
+        <span class="chip" style="background:#fff;color:#121a33;">surface #ffffff</span>
+        <span class="chip" style="background:#3143c4;color:#fff;border-color:#3143c4;">primary #3143c4</span>
+        <span class="chip" style="background:#00c2d1;color:#121a33;border-color:#00c2d1;">accent #00c2d1</span>
+        <span class="chip" style="background:#fff;color:#5c6690;">muted #5c6690</span>
+      </div>
+      <div class="snippet" style="background:#ffffff;color:#121a33;">
+        <div class="thread-header" style="border-color:#dde1f2;">
+          <div class="avatar" style="background:#3143c4;color:#fff;">A</div>
+          <span class="name">Amelia</span>
+          <span class="status" style="color:#00a3af;">● working</span>
+        </div>
+        <div class="msg">
+          <div class="avatar" style="background:#3143c4;color:#fff;">A</div>
+          <div>
+            <div class="bubble-name">Amelia</div>
+            morning — pulled up issue #142, looks like the auth token refresh is racing the logout call. digging in.
+          </div>
+        </div>
+        <div class="tool-card" style="background:#eef0fc;border-color:#ccd3f2;color:#3143c4;">
+          <span class="chev">▸</span> Editing src/api/auth.ts
+        </div>
+        <div class="msg">
+          <div class="avatar" style="background:#3143c4;color:#fff;">A</div>
+          <div>
+            <div class="bubble-name">Amelia</div>
+            found it — refresh isn't cancelled on logout. want me to add an AbortController, or just guard the write?
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="mode-panel" style="background:#0a0e1f;">
+      <div class="mode-label" style="background:#101a3d;color:#6d7cff;">Dark</div>
+      <div class="chips">
+        <span class="chip" style="background:#101833;color:#e3e7fb;border-color:#212c52;">bg #0a0e1f</span>
+        <span class="chip" style="background:#101833;color:#e3e7fb;border-color:#212c52;">surface #101833</span>
+        <span class="chip" style="background:#6d7cff;color:#0a0e1f;border-color:#6d7cff;">primary #6d7cff</span>
+        <span class="chip" style="background:#22e5e5;color:#0a0e1f;border-color:#22e5e5;">accent #22e5e5</span>
+        <span class="chip" style="background:#101833;color:#8790bf;border-color:#212c52;">muted #8790bf</span>
+      </div>
+      <div class="snippet" style="background:#101833;color:#e3e7fb;">
+        <div class="thread-header" style="border-color:#212c52;">
+          <div class="avatar" style="background:#6d7cff;color:#0a0e1f;">A</div>
+          <span class="name">Amelia</span>
+          <span class="status" style="color:#22e5e5;">● working</span>
+        </div>
+        <div class="msg">
+          <div class="avatar" style="background:#6d7cff;color:#0a0e1f;">A</div>
+          <div>
+            <div class="bubble-name">Amelia</div>
+            morning — pulled up issue #142, looks like the auth token refresh is racing the logout call. digging in.
+          </div>
+        </div>
+        <div class="tool-card" style="background:#0d1330;border-color:#29356a;color:#7ee5e5;">
+          <span class="chev">▸</span> Editing src/api/auth.ts
+        </div>
+        <div class="msg">
+          <div class="avatar" style="background:#6d7cff;color:#0a0e1f;">A</div>
+          <div>
+            <div class="bubble-name">Amelia</div>
+            found it — refresh isn't cancelled on logout. want me to add an AbortController, or just guard the write?
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ================= VARIATION 5: PAPER & INK ================= -->
+<!--
+  Paper & Ink — hex values
+  Light: bg #f7f5f2, surface #ffffff, text #201f1c, text-muted #746f66,
+         primary #201f1c, primary-fg #ffffff, accent #a6772c, border #e6e2db,
+         tool-card bg #f1ede5, tool-card border #ddd5c6
+  Dark:  bg #141310, surface #1c1a16, text #ece8e0, text-muted #948d7e,
+         primary #ece8e0, primary-fg #141310, accent #d6a54e, border #322e27,
+         tool-card bg #1f1c16, tool-card border #3a352a
+-->
+<div class="variation">
+  <div class="variation-header">
+    <h2>5. Paper &amp; Ink</h2>
+    <p>Quiet, editorial, minimal — near-monochrome with a single warm-gold accent; craft over decoration.</p>
+  </div>
+  <div class="modes">
+    <div class="mode-panel" style="background:#f7f5f2;">
+      <div class="mode-label" style="background:#e9e5dc;color:#201f1c;">Light</div>
+      <div class="chips">
+        <span class="chip" style="background:#fff;color:#201f1c;">bg #f7f5f2</span>
+        <span class="chip" style="background:#fff;color:#201f1c;">surface #ffffff</span>
+        <span class="chip" style="background:#201f1c;color:#fff;border-color:#201f1c;">primary #201f1c</span>
+        <span class="chip" style="background:#a6772c;color:#fff;border-color:#a6772c;">accent #a6772c</span>
+        <span class="chip" style="background:#fff;color:#746f66;">muted #746f66</span>
+      </div>
+      <div class="snippet" style="background:#ffffff;color:#201f1c;">
+        <div class="thread-header" style="border-color:#e6e2db;">
+          <div class="avatar" style="background:#201f1c;color:#fff;">A</div>
+          <span class="name">Amelia</span>
+          <span class="status" style="color:#a6772c;">● working</span>
+        </div>
+        <div class="msg">
+          <div class="avatar" style="background:#201f1c;color:#fff;">A</div>
+          <div>
+            <div class="bubble-name">Amelia</div>
+            morning — pulled up issue #142, looks like the auth token refresh is racing the logout call. digging in.
+          </div>
+        </div>
+        <div class="tool-card" style="background:#f1ede5;border-color:#ddd5c6;color:#5a4a2c;">
+          <span class="chev">▸</span> Editing src/api/auth.ts
+        </div>
+        <div class="msg">
+          <div class="avatar" style="background:#201f1c;color:#fff;">A</div>
+          <div>
+            <div class="bubble-name">Amelia</div>
+            found it — refresh isn't cancelled on logout. want me to add an AbortController, or just guard the write?
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="mode-panel" style="background:#141310;">
+      <div class="mode-label" style="background:#211e17;color:#d6a54e;">Dark</div>
+      <div class="chips">
+        <span class="chip" style="background:#1c1a16;color:#ece8e0;border-color:#322e27;">bg #141310</span>
+        <span class="chip" style="background:#1c1a16;color:#ece8e0;border-color:#322e27;">surface #1c1a16</span>
+        <span class="chip" style="background:#ece8e0;color:#141310;border-color:#ece8e0;">primary #ece8e0</span>
+        <span class="chip" style="background:#d6a54e;color:#141310;border-color:#d6a54e;">accent #d6a54e</span>
+        <span class="chip" style="background:#1c1a16;color:#948d7e;border-color:#322e27;">muted #948d7e</span>
+      </div>
+      <div class="snippet" style="background:#1c1a16;color:#ece8e0;">
+        <div class="thread-header" style="border-color:#322e27;">
+          <div class="avatar" style="background:#ece8e0;color:#141310;">A</div>
+          <span class="name">Amelia</span>
+          <span class="status" style="color:#d6a54e;">● working</span>
+        </div>
+        <div class="msg">
+          <div class="avatar" style="background:#ece8e0;color:#141310;">A</div>
+          <div>
+            <div class="bubble-name">Amelia</div>
+            morning — pulled up issue #142, looks like the auth token refresh is racing the logout call. digging in.
+          </div>
+        </div>
+        <div class="tool-card" style="background:#1f1c16;border-color:#3a352a;color:#d6a54e;">
+          <span class="chev">▸</span> Editing src/api/auth.ts
+        </div>
+        <div class="msg">
+          <div class="avatar" style="background:#ece8e0;color:#141310;">A</div>
+          <div>
+            <div class="bubble-name">Amelia</div>
+            found it — refresh isn't cancelled on logout. want me to add an AbortController, or just guard the write?
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+</body>
+</html>
