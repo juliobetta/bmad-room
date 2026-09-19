@@ -1,3 +1,4 @@
+import type { Dirent, Stats } from 'node:fs';
 import { promises as fs } from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
@@ -27,7 +28,7 @@ export async function browseDirectory(requestedPath?: string | null): Promise<Br
   const target = trimmed && trimmed.length > 0 ? trimmed : os.homedir();
   const resolved = path.resolve(target);
 
-  let stat;
+  let stat: Stats;
   try {
     stat = await fs.stat(resolved);
   } catch {
@@ -38,7 +39,7 @@ export async function browseDirectory(requestedPath?: string | null): Promise<Br
     throw new BrowseError(`Not a directory: ${resolved}`);
   }
 
-  let dirents;
+  let dirents: Dirent[];
   try {
     dirents = await fs.readdir(resolved, { withFileTypes: true });
   } catch {

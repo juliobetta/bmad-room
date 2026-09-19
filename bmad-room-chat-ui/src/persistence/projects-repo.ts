@@ -1,6 +1,6 @@
-import { nanoid } from 'nanoid';
 import type Database from 'better-sqlite3';
-import type { ProjectRow } from './schema.js';
+import { nanoid } from 'nanoid';
+import type { ProjectRow } from './schema';
 
 export type Project = ProjectRow;
 
@@ -28,9 +28,9 @@ export class ProjectsRepo {
   }
 
   findByPath(path: string): Project | undefined {
-    const row = this.db
-      .prepare('SELECT id, path, created_at FROM projects WHERE path = ?')
-      .get(path) as ProjectSqlRow | undefined;
+    const row = this.db.prepare('SELECT id, path, created_at FROM projects WHERE path = ?').get(path) as
+      | ProjectSqlRow
+      | undefined;
     return row ? toProject(row) : undefined;
   }
 
@@ -40,9 +40,7 @@ export class ProjectsRepo {
       path,
       createdAt: new Date().toISOString(),
     };
-    this.db
-      .prepare('INSERT INTO projects (id, path, created_at) VALUES (@id, @path, @createdAt)')
-      .run(project);
+    this.db.prepare('INSERT INTO projects (id, path, created_at) VALUES (@id, @path, @createdAt)').run(project);
     return project;
   }
 }

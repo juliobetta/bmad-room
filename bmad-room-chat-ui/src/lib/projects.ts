@@ -1,6 +1,7 @@
+import type { Stats } from 'node:fs';
 import { promises as fs, constants as fsConstants } from 'node:fs';
 import path from 'node:path';
-import type { Project, ProjectsRepo } from '../persistence/projectsRepo.js';
+import type { Project, ProjectsRepo } from '@/persistence/projects-repo';
 
 /**
  * `GET /api/projects`, `POST /api/projects` with checkout validation.
@@ -25,7 +26,7 @@ export async function validateProjectCheckout(rawPath: string): Promise<Checkout
     return { ok: false, reason: `Path does not exist: ${rawPath}` };
   }
 
-  let stat;
+  let stat: Stats;
   try {
     stat = await fs.stat(resolvedPath);
   } catch {
@@ -60,9 +61,7 @@ function isUniqueConstraintError(err: unknown): boolean {
   return code === 'SQLITE_CONSTRAINT_UNIQUE' || err.message.includes('UNIQUE constraint failed');
 }
 
-export type CreateProjectResult =
-  | { status: 201; body: Project }
-  | { status: 422; body: { error: string } };
+export type CreateProjectResult = { status: 201; body: Project } | { status: 422; body: { error: string } };
 
 export async function createProject(repo: ProjectsRepo, rawBody: unknown): Promise<CreateProjectResult> {
   const rawPath =
