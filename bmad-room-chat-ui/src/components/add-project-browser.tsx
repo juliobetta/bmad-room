@@ -1,6 +1,8 @@
+'use client';
+
 import { useEffect, useState } from 'react';
-import { ApiError, browse, createProject } from '../api/client';
-import type { BrowseResult, Project } from '../api/types';
+import { ApiError, browse, createProject } from '@/api/client';
+import type { BrowseResult, Project } from '@/api/types';
 
 /**
  * Breadcrumb directory browser against `GET /api/fs/browse` (AD-7). No
@@ -40,9 +42,9 @@ export function AddProjectBrowser({ onCreated, onClose }: AddProjectBrowserProps
       .finally(() => setLoading(false));
   };
 
+  // biome-ignore lint/correctness/useExhaustiveDependencies: intentional mount-only initial load
   useEffect(() => {
     load(undefined);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   useEffect(() => {
@@ -68,26 +70,32 @@ export function AddProjectBrowser({ onCreated, onClose }: AddProjectBrowserProps
   };
 
   return (
-    <div className="add-project-browser__backdrop" role="presentation" onClick={onClose}>
+    // biome-ignore lint/a11y/noStaticElementInteractions: decorative backdrop; Escape (handled above) and the explicit Close button already provide keyboard-accessible dismissal
+    <div className="fixed inset-0 flex items-center justify-center bg-black/35" role="presentation" onClick={onClose}>
+      {/* biome-ignore lint/a11y/useKeyWithClickEvents: stopPropagation only, not a standalone interactive affordance — dialog contents remain keyboard-navigable via their own controls */}
       <div
-        className="add-project-browser"
+        className="flex max-h-[70vh] w-[480px] max-w-[calc(100vw-32px)] flex-col gap-3 rounded-[10px] border border-[var(--border)] bg-[var(--surface-raised)] p-4"
         role="dialog"
         aria-modal="true"
         aria-label="Add project"
         onClick={(e) => e.stopPropagation()}
       >
-        <header className="add-project-browser__header">
-          <h2>Add project</h2>
+        <header className="flex items-center justify-between">
+          <h2 className="m-0 text-[15px] font-semibold">Add project</h2>
           <button type="button" aria-label="Close" onClick={onClose}>
             &times;
           </button>
         </header>
 
         {result && (
-          <nav aria-label="Breadcrumb" className="add-project-browser__breadcrumb">
+          <nav aria-label="Breadcrumb" className="overflow-x-auto whitespace-nowrap font-mono text-[13px]">
             {breadcrumbSegments(result.path).map((segment, index, arr) => (
               <span key={segment.path}>
-                <button type="button" onClick={() => load(segment.path)}>
+                <button
+                  type="button"
+                  className="border-none bg-none p-0 text-[var(--primary)]"
+                  onClick={() => load(segment.path)}
+                >
                   {segment.label}
                 </button>
                 {index < arr.length - 1 && <span aria-hidden="true"> / </span>}
@@ -98,17 +106,21 @@ export function AddProjectBrowser({ onCreated, onClose }: AddProjectBrowserProps
 
         {loading && <p>Loading…</p>}
         {browseError && (
-          <p className="add-project-browser__error" role="alert">
+          <p className="m-0 text-[13px] text-[#b3261e]" role="alert">
             {browseError}
           </p>
         )}
 
         {!loading && !browseError && result && (
-          <ul className="add-project-browser__list">
-            {result.entries.length === 0 && <li className="add-project-browser__empty">No subdirectories</li>}
+          <ul className="m-0 flex-1 list-none overflow-y-auto p-0">
+            {result.entries.length === 0 && <li className="px-0 py-2 text-[var(--text-muted)]">No subdirectories</li>}
             {result.entries.map((entry) => (
-              <li key={entry.path}>
-                <button type="button" onClick={() => load(entry.path)}>
+              <li key={entry.path} className="border-b border-[var(--border)]">
+                <button
+                  type="button"
+                  className="w-full border-none bg-none px-1 py-2 text-left text-sm text-[var(--text-primary)]"
+                  onClick={() => load(entry.path)}
+                >
                   {entry.name}
                 </button>
               </li>
@@ -117,16 +129,26 @@ export function AddProjectBrowser({ onCreated, onClose }: AddProjectBrowserProps
         )}
 
         {submitError && (
-          <p className="add-project-browser__error" role="alert">
+          <p className="m-0 text-[13px] text-[#b3261e]" role="alert">
             {submitError}
           </p>
         )}
 
-        <footer className="add-project-browser__footer">
-          <button type="button" onClick={onClose} disabled={submitting}>
+        <footer className="flex justify-end gap-2">
+          <button
+            type="button"
+            className="rounded-[6px] border border-[var(--border)] bg-transparent px-3 py-2 text-[var(--text-primary)]"
+            onClick={onClose}
+            disabled={submitting}
+          >
             Cancel
           </button>
-          <button type="button" onClick={handleSubmit} disabled={!result || submitting}>
+          <button
+            type="button"
+            className="rounded-[6px] border-none bg-[var(--primary)] px-3 py-2 text-[var(--primary-foreground)]"
+            onClick={handleSubmit}
+            disabled={!result || submitting}
+          >
             {submitting ? 'Adding…' : 'Add this folder'}
           </button>
         </footer>

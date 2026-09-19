@@ -6,7 +6,9 @@ async function parseJsonOrThrow<T>(res: Response): Promise<T> {
   const body = (await res.json().catch(() => undefined)) as T | ApiErrorBody | undefined;
   if (!res.ok) {
     const message =
-      body && typeof body === 'object' && 'error' in body ? (body as ApiErrorBody).error : `Request failed (${res.status})`;
+      body && typeof body === 'object' && 'error' in body
+        ? (body as ApiErrorBody).error
+        : `Request failed (${res.status})`;
     throw new ApiError(message);
   }
   return body as T;

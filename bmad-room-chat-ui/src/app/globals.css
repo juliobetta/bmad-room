@@ -1,3 +1,5 @@
+@import "tailwindcss";
+
 /* Design tokens — DESIGN.md (BMad Chat UI). Light is default; dark follows
    prefers-color-scheme (EXPERIENCE.md: theme follows OS/browser setting). */
 :root {
@@ -13,7 +15,7 @@
   --tool-card-border: #bfe0c9;
 
   --font-body: Inter, system-ui, sans-serif;
-  --font-mono: 'JetBrains Mono', ui-monospace, 'SFMono-Regular', monospace;
+  --font-mono: "JetBrains Mono", ui-monospace, "SFMono-Regular", monospace;
 
   --radius-sm: 6px;
   --radius-md: 10px;
@@ -60,8 +62,4 @@ body {
 
 button {
   font-family: inherit;
-}
-
-#root {
-  min-height: 100vh;
 }

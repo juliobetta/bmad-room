@@ -53,6 +53,12 @@ export function subscribeActiveProject(listener: Listener): () => void {
   return () => listeners.delete(listener);
 }
 
+function getServerActiveProjectId(): string | null {
+  // No `window`/localStorage during SSR — active project is client-side-only
+  // state (see module comment), so the server snapshot is always null.
+  return null;
+}
+
 export function useActiveProjectId(): string | null {
-  return useSyncExternalStore(subscribeActiveProject, getActiveProjectId);
+  return useSyncExternalStore(subscribeActiveProject, getActiveProjectId, getServerActiveProjectId);
 }
