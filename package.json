@@ -1,8 +1,4 @@
 {
   "name": "bmad-room",
-  "private": true,
-  "workspaces": [
-    "bmad-room-chat-ui",
-    "bmad-room-chat-ui/web"
-  ]
+  "private": true
 }
