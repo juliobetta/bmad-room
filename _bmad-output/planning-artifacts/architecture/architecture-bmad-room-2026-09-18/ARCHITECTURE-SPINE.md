@@ -136,22 +136,28 @@ graph TB
     Pty2 -.cwd = real checkout.-> Proj2[/Project checkout B/]
 ```
 
-Deployment & environments: single machine, single process pair (Vite dev server or static build served by the backend daemon, plus the Node backend) — no separate environments, no external hosting; this is a local dev tool, not a deployed service. The SQLite file and per-project symlink overlays are the only persistent state.
+Deployment & environments: single machine, single Next.js process via a custom `server.ts` (`pnpm dev` / `pnpm start`) — no separate environments, no external hosting; this is a local dev tool, not a deployed service. The SQLite file and per-project symlink overlays are the only persistent state.
 
 Idle-reap: a `ThreadActor`'s pty is killed after a configurable idle window (default 30 min) with no open WS subscriber and no in-flight turn.
 
 Entity model: `Persona` (`id`, `agentSkillId`, `name`) is a **global catalog**, sourced once from BMad's agent config — never duplicated per project. CAP-3's "persona as persistent per-project contact" is realized entirely by `Thread`: a `dm`-kind `Thread` is unique on `(projectId, personaId)`; that row, not a `Persona` row, is what's scoped per project. `Message` (`id`, `threadId`, `speakerPersonaId` nullable for the user, `kind: text|tool-card|subagent-card|system`, `content`, `parentMessageId` nullable, `createdAt`) carries a persisted `Thread.status` column that a `ThreadActor` writes on every status change (read by the `presence` channel and REST bootstrap, per Consistency Conventions).
 
 ```text
-bmad-room-chat-ui/            # new package, lives alongside this repo's existing _bmad tooling
-  src/
-    actors/                  # ThreadActor + registry (AD-1)
-    pty/                     # spawn + project activation (AD-2)
-    parsing/                 # xterm/headless buffer + line classifier (AD-3)
-    persistence/             # better-sqlite3 schema + repositories
-    http/                    # REST bootstrap endpoints + fs-browse (AD-7)
-    ws/                      # WS server, envelope encode/decode + presence channel
-  web/                       # React/Vite frontend (DESIGN.md tokens, EXPERIENCE.md components)
+# Repo root (Story 1.2 moved the app here — no more bmad-room-chat-ui/
+# subpackage; BMad's own tooling (_bmad/, _bmad-output/, .claude/) lives
+# alongside it as sibling directories, excluded from lint/typecheck scope)
+server.ts                     # custom server (Next's request handler over http.createServer)
+src/
+  app/                        # Next.js App Router: layout.tsx, page.tsx, globals.css
+    api/                      # REST route handlers (fs-browse, projects) — was src/http (AD-7)
+  actors/                     # ThreadActor + registry (AD-1)
+  pty/                        # spawn + project activation (AD-2)
+  parsing/                    # xterm/headless buffer + line classifier (AD-3)
+  persistence/                # better-sqlite3 schema + repositories
+  lib/                        # REST logic + DB singleton (src/lib/db.ts)
+  components/                 # React components (DESIGN.md tokens, EXPERIENCE.md)
+  state/                      # client-side state (e.g. active-project)
+  ws/                         # WS server, envelope encode/decode + presence channel
 ```
 
 ## Capability → Architecture Map

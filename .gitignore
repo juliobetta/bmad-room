@@ -11,6 +11,14 @@ dist/
 build/
 out/
 *.tsbuildinfo
+.next/
+next-env.d.ts
+
+# Local SQLite dev database
+*.db
+*.db-journal
+*.db-wal
+*.db-shm
 
 # Env
 .env

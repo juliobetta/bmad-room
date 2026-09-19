@@ -1,5 +1,0 @@
-packages:
-  - bmad-room-chat-ui
-
-onlyBuiltDependencies:
-  - better-sqlite3
