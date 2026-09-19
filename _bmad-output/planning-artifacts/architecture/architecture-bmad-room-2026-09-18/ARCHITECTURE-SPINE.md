@@ -92,7 +92,8 @@ flowchart LR
 | --- | --- |
 | Bootstrap vs. live transport | Project list, persona catalog, thread list, and paginated message history are fetched via a plain REST layer (`GET /api/projects`, `GET /api/projects/:id/threads`, `GET /api/threads/:id/messages`) *before* opening a thread's WS connection. WS carries only live events/commands for an already-open thread, never initial state. A separate lightweight `presence` WS channel broadcasts `{threadId, status}` deltas for list/tray views — it is not a per-thread subscription and triggers no pty spawn. |
 | WS wire envelope | Every frame on a thread's live channel is `{ type, threadId, payload, ts }` JSON. Events: `message.delta`, `message.complete`, `tool-card.open/update/close`, `subagent-card.open/close`, `status` (`idle\|working\|needs-input\|stopped`), `system`. Commands: `send-message`, `stop-turn`, `open-in-terminal`. |
-| Naming | Entities: `Project`, `Persona` (global catalog), `Thread` (`kind: dm\|channel`), `ThreadParticipant`, `Message`. Table names snake_case plural; TS types PascalCase singular. |
+| Naming | Entities: `Project`, `Persona` (global catalog), `Thread` (`kind: dm\|channel`), `ThreadParticipant`, `Message`. Table names snake_case plural; TS types PascalCase singular. All source file names (components, modules, routes) are kebab-case (e.g. `project-rail.tsx`, `add-project-browser.tsx`) — the exported identifier inside a component file stays PascalCase since JSX requires it. Test files are colocated as `<subject>.spec.ts`/`.spec.tsx`, never `.test.ts`. |
+| Imports | Cross-directory imports use the `@/*` path alias (`@/lib/...`, `@/components/...`, `@/persistence/...`) instead of relative `../../..` chains; same-directory imports (`./foo`) stay relative. |
 | Data & formats | `id` = string (nanoid); `createdAt`/`ts` = ISO-8601 UTC. A tool-card or subagent-card is minted as a `Message` row (kind `tool-card`/`subagent-card`) by the `ThreadActor` at `*.open` time — before the WS event broadcasts — and both the persisted row and the WS event carry the same `parentMessageId` referencing that row's id; there is no second, WS-only id space. |
 | State & cross-cutting | Only a `ThreadActor` mutates its own thread's rows and pty; the registry only creates-if-absent/looks up actors, never reaches into one's state or kills its pty (AD-1). Errors surface as a `system`-kind message in the thread, never a silent log-only failure (per CAP-2's inline-correction requirement). |
 
@@ -135,22 +136,28 @@ graph TB
     Pty2 -.cwd = real checkout.-> Proj2[/Project checkout B/]
 ```
 
-Deployment & environments: single machine, single process pair (Vite dev server or static build served by the backend daemon, plus the Node backend) — no separate environments, no external hosting; this is a local dev tool, not a deployed service. The SQLite file and per-project symlink overlays are the only persistent state.
+Deployment & environments: single machine, single Next.js process via a custom `server.ts` (`pnpm dev` / `pnpm start`) — no separate environments, no external hosting; this is a local dev tool, not a deployed service. The SQLite file and per-project symlink overlays are the only persistent state.
 
 Idle-reap: a `ThreadActor`'s pty is killed after a configurable idle window (default 30 min) with no open WS subscriber and no in-flight turn.
 
 Entity model: `Persona` (`id`, `agentSkillId`, `name`) is a **global catalog**, sourced once from BMad's agent config — never duplicated per project. CAP-3's "persona as persistent per-project contact" is realized entirely by `Thread`: a `dm`-kind `Thread` is unique on `(projectId, personaId)`; that row, not a `Persona` row, is what's scoped per project. `Message` (`id`, `threadId`, `speakerPersonaId` nullable for the user, `kind: text|tool-card|subagent-card|system`, `content`, `parentMessageId` nullable, `createdAt`) carries a persisted `Thread.status` column that a `ThreadActor` writes on every status change (read by the `presence` channel and REST bootstrap, per Consistency Conventions).
 
 ```text
-bmad-room-chat-ui/            # new package, lives alongside this repo's existing _bmad tooling
-  src/
-    actors/                  # ThreadActor + registry (AD-1)
-    pty/                     # spawn + project activation (AD-2)
-    parsing/                 # xterm/headless buffer + line classifier (AD-3)
-    persistence/             # better-sqlite3 schema + repositories
-    http/                    # REST bootstrap endpoints + fs-browse (AD-7)
-    ws/                      # WS server, envelope encode/decode + presence channel
-  web/                       # React/Vite frontend (DESIGN.md tokens, EXPERIENCE.md components)
+# Repo root (Story 1.2 moved the app here — no more bmad-room-chat-ui/
+# subpackage; BMad's own tooling (_bmad/, _bmad-output/, .claude/) lives
+# alongside it as sibling directories, excluded from lint/typecheck scope)
+server.ts                     # custom server (Next's request handler over http.createServer)
+src/
+  app/                        # Next.js App Router: layout.tsx, page.tsx, globals.css
+    api/                      # REST route handlers (fs-browse, projects) — was src/http (AD-7)
+  actors/                     # ThreadActor + registry (AD-1)
+  pty/                        # spawn + project activation (AD-2)
+  parsing/                    # xterm/headless buffer + line classifier (AD-3)
+  persistence/                # better-sqlite3 schema + repositories
+  lib/                        # REST logic + DB singleton (src/lib/db.ts)
+  components/                 # React components (DESIGN.md tokens, EXPERIENCE.md)
+  state/                      # client-side state (e.g. active-project)
+  ws/                         # WS server, envelope encode/decode + presence channel
 ```
 
 ## Capability → Architecture Map

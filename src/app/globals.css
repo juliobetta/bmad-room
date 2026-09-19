@@ -1,0 +1,65 @@
+@import "tailwindcss";
+
+/* Design tokens — DESIGN.md (BMad Chat UI). Light is default; dark follows
+   prefers-color-scheme (EXPERIENCE.md: theme follows OS/browser setting). */
+:root {
+  --surface-base: #f4f6f4;
+  --surface-raised: #ffffff;
+  --text-primary: #14201a;
+  --text-muted: #5c6b62;
+  --primary: #1f7a4d;
+  --primary-foreground: #ffffff;
+  --accent: #0f8f5c;
+  --border: #d6ded8;
+  --tool-card-bg: #eef6f0;
+  --tool-card-border: #bfe0c9;
+
+  --font-body: Inter, system-ui, sans-serif;
+  --font-mono: "JetBrains Mono", ui-monospace, "SFMono-Regular", monospace;
+
+  --radius-sm: 6px;
+  --radius-md: 10px;
+  --radius-full: 9999px;
+
+  --space-1: 4px;
+  --space-2: 8px;
+  --space-3: 12px;
+  --space-4: 16px;
+  --space-5: 24px;
+  --space-6: 32px;
+
+  color-scheme: light dark;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --surface-base: #0c1210;
+    --surface-raised: #121b17;
+    --text-primary: #d9f2e4;
+    --text-muted: #7fa08e;
+    --primary: #34d399;
+    --primary-foreground: #04120b;
+    --accent: #4ade80;
+    --border: #1f2e27;
+    --tool-card-bg: #0f1c16;
+    --tool-card-border: #22402f;
+  }
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  min-width: 960px;
+  background: var(--surface-base);
+  color: var(--text-primary);
+  font-family: var(--font-body);
+  font-size: 15px;
+  line-height: 1.5;
+}
+
+button {
+  font-family: inherit;
+}
