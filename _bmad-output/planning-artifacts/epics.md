@@ -51,9 +51,9 @@ NFR6: This project is built in `bmad-room` itself, not as an extension of `bmad-
 - Data model: `Project`, `Persona` (global catalog, sourced once from BMad's agent config, never duplicated per project), `Thread` (`kind: dm|channel`, non-nullable `projectId`, unique on `(projectId, personaId)` for `dm`-kind), `ThreadParticipant`, `Message` (`kind: text|tool-card|subagent-card|system`, `parentMessageId` nullable, persisted `Thread.status` column written by the owning `ThreadActor`).
 - Tool-card/subagent-card rows are minted as a `Message` row at `*.open` time, before the WS event broadcasts; the persisted row and the WS event share the same `parentMessageId`.
 - Errors surface as a `system`-kind message in the thread, never a silent log-only failure.
-- Stack (pin at scaffold time): Node.js >=20.19 or >=22.12; TypeScript 5.x; node-pty 1.1.0; @xterm/headless 6.0.0; better-sqlite3 13.0.3; ws 8.21.3; React 19.3.0; Vite 8.3.0 (re-resolve create-vite's own patch version at scaffold time).
-- Deployment: single machine, single process pair (Vite dev server or static build served by the backend daemon, plus the Node backend) — no external hosting, no auth/multi-user.
-- New package `bmad-room-chat-ui/` lives alongside this repo's existing `_bmad` tooling, with `src/actors`, `src/pty`, `src/parsing`, `src/persistence`, `src/http`, `src/ws`, and `web/` as the top-level module split.
+- Stack (pin at scaffold time; revised by Story 1.2): Node.js >=20.19 or >=22.12; TypeScript 5.x; pnpm; Next.js (App Router, re-resolve latest at scaffold time); node-pty 1.1.0; @xterm/headless 6.0.0; better-sqlite3 13.0.3; ws 8.21.3; React 19.3.0; Tailwind CSS; Biome; Vitest.
+- Deployment: single machine, single Next.js process (`pnpm dev` / `next start`) via a custom server (`server.ts`) — App Router route handlers alone cannot serve raw WebSocket upgrades, so `ws`'s `WebSocketServer` attaches to the same `http.Server`'s `upgrade` event that Next's request handler uses. No external hosting, no auth/multi-user.
+- New package `bmad-room-chat-ui/` lives alongside this repo's existing `_bmad` tooling, with `src/actors`, `src/pty`, `src/parsing`, `src/persistence`, `src/ws`, and `src/app` (Next.js App Router, including `src/app/api/**/route.ts` for what was `src/http/`) as the top-level module split.
 - Deferred (explicitly out of scope for story-writing in this pass): notification delivery mechanics (browser `Notification` permission flow, focus detection), open-in-terminal OS-specific launch mechanism, message-formatting depth (code blocks/diffs/markdown) and additional keyboard shortcuts, multi-persona process isolation (agent-team party mode), auth/multi-user.
 - Persona catalog drift handling (gap surfaced during story creation, not in the original Architecture spine): the `Persona` catalog re-syncs on app start, keyed by stable `agentSkillId`. If a previously known `agentSkillId` is missing from the current sync, that `Persona` is marked `removed` rather than deleted — any `Thread` tied to it keeps its full message history and becomes read-only (composer disabled, persona shown as removed in the list); nothing is ever silently reassigned to a different agent by display-name matching.
 
@@ -152,7 +152,47 @@ So that I can start chatting with BMad personas grounded in that project's actua
 **When** validation runs
 **Then** an error is shown and no `Project` row is created
 
-### Story 1.2: Start a DM with a Persona
+### Story 1.2: Migrate to the pnpm + Next.js + Biome + Tailwind + Vitest Stack
+
+As a developer building the chat UI,
+I want the app running on pnpm, Next.js (App Router), Biome, Tailwind, and Vitest instead of a standalone Node backend plus a separate Vite frontend,
+So that the rest of Epic 1 and Epic 2 build on one consolidated process and consistent tooling, matching the rest of this codebase's conventions.
+
+**Acceptance Criteria:**
+
+**Given** the app is currently split across a standalone Node/`tsx` backend (`src/http/*`) and a separate Vite dev server (`web/`)
+**When** the migration is complete
+**Then** the app runs as a single Next.js (App Router) process, and `pnpm dev` starts exactly one process, not two
+
+**Given** raw pty bytes must reach the frontend over WebSocket (per AD-3 and the WS wire envelope)
+**When** the Next.js process starts
+**Then** it runs via a custom server (`server.ts`) so `ws`'s `WebSocketServer` attaches to the same `http.Server`'s `upgrade` event Next's own request handler uses — plain App Router route handlers cannot serve a raw WS upgrade
+
+**Given** Story 1.1's project REST and fs-browse endpoints (`GET /api/fs/browse`, `Project` CRUD)
+**When** they're ported to Next.js route handlers (`src/app/api/**/route.ts`)
+**Then** their request/response contracts are unchanged and Story 1.1's acceptance criteria still pass unmodified
+
+**Given** the existing SQLite database and `better-sqlite3` schema
+**When** the migration runs
+**Then** the database file and schema are untouched — only the runtime/process wrapper changes, no data migration
+
+**Given** the project currently uses npm (`package-lock.json`)
+**When** dependencies are reinstalled
+**Then** pnpm is used exclusively and `package-lock.json` is removed
+
+**Given** the existing hand-written CSS (`App.css`, `index.css`)
+**When** the ported components (project rail, add-project breadcrumb browser) are restyled
+**Then** Tailwind utility classes replace it with no visual regression to Story 1.1's UI
+
+**Given** the existing `oxlint` config
+**When** linting is reconfigured
+**Then** Biome replaces it and `pnpm lint` runs clean
+
+**Given** the existing `node:test` suites (`fsBrowse`, `projects`, `projectsRepo`)
+**When** they're migrated
+**Then** they run under Vitest with equivalent coverage and `pnpm test` passes
+
+### Story 1.3: Start a DM with a Persona
 
 As a user with an active project,
 I want to see BMad personas as contacts and open a 1:1 thread with one,
@@ -189,7 +229,7 @@ So that I have a persistent, separate conversation per persona.
 **When** the sync runs
 **Then** no change occurs to that `Persona` or its `Thread`s
 
-### Story 1.3: Send a Message and Get a Real, Grounded Response
+### Story 1.4: Send a Message and Get a Real, Grounded Response
 
 As a user in a DM thread,
 I want to send a message and get a response backed by real Claude Code execution in my project's actual checkout,
@@ -221,7 +261,7 @@ So that I can trust every action is real, not simulated.
 **When** it's received
 **Then** the bubble stops streaming and is persisted as a `Message` row
 
-### Story 1.4: See Tool Calls and Subagent Work Inline
+### Story 1.5: See Tool Calls and Subagent Work Inline
 
 As a user watching a persona work,
 I want tool calls and subagent activity shown inline,
@@ -249,7 +289,7 @@ So that I can follow real actions without leaving the conversation.
 **When** `*.close` arrives
 **Then** the card reflects completion without losing its content
 
-### Story 1.5: Stop a Running Turn
+### Story 1.6: Stop a Running Turn
 
 As a user whose persona is mid-turn,
 I want to stop it with one click,
@@ -273,7 +313,7 @@ So that I can interrupt work without losing what's been produced.
 **When** I view the header
 **Then** the stop control is not shown
 
-### Story 1.6: See Persona Status at a Glance
+### Story 1.7: See Persona Status at a Glance
 
 As a user with multiple persona threads,
 I want to see each one's status without opening it,
@@ -297,7 +337,7 @@ So that I know who's idle, working, or waiting on me.
 **When** received
 **Then** the list updates that status dot without opening a live per-thread subscription (no pty spawn triggered)
 
-### Story 1.7: Get an Inline Notice When Project Routing Self-Corrects
+### Story 1.8: Get an Inline Notice When Project Routing Self-Corrects
 
 As a user relying on correct per-project execution,
 I want any activation problem surfaced the moment it happens,
@@ -317,7 +357,7 @@ So that I never wonder if something landed in the wrong project silently.
 **When** I read it
 **Then** the copy is short and factual, never a silent no-trace correction
 
-### Story 1.8: Resume a Conversation After Reopening the App
+### Story 1.9: Resume a Conversation After Reopening the App
 
 As a returning user,
 I want my prior conversations still there when I come back,
@@ -341,7 +381,7 @@ So that I don't lose context between sessions.
 **When** one idle-reaps or crashes
 **Then** no other thread's actor/pty is affected — deregistration is always actor-initiated
 
-### Story 1.9: Drop Into a Real Terminal Session
+### Story 1.10: Drop Into a Real Terminal Session
 
 As a user who needs more control,
 I want to open the real Claude Code/terminal session for this project directly,
@@ -361,7 +401,7 @@ So that I can intervene without losing my chat thread.
 **When** I check the thread
 **Then** nothing was discarded — history and state are unaffected
 
-### Story 1.10: Toggle Light/Dark Theme and Settings
+### Story 1.11: Toggle Light/Dark Theme and Settings
 
 As a user,
 I want the app to match my system theme by default and let me override it,
