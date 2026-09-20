@@ -174,4 +174,18 @@ description = "Grounds every finding in verifiable evidence."
 
     warn.mockRestore();
   });
+
+  test('an unparseable custom/config.toml is ignored (base config still syncs) and warns', () => {
+    const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
+    const repo = makeRepo();
+    const bmadDir = makeBmadDir(BASE_CONFIG, '[agents.broken\nname = "oops"');
+
+    expect(() => syncPersonas(repo, bmadDir)).not.toThrow();
+
+    expect(repo.list().length).toBe(2);
+    expect(repo.findById('bmad-agent-pm')?.description).toBe('Drives PRD creation.');
+    expect(warn).toHaveBeenCalled();
+
+    warn.mockRestore();
+  });
 });

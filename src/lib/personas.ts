@@ -89,12 +89,25 @@ export function syncPersonas(repo: PersonasRepo, bmadDir = path.join(process.cwd
     console.warn(`syncPersonas: failed to read/parse ${path.join(bmadDir, 'config.toml')}; skipping sync`);
     return;
   }
-  const custom = readToml(path.join(bmadDir, 'custom', 'config.toml'), true);
+  const customPath = path.join(bmadDir, 'custom', 'config.toml');
+  const custom = readToml(customPath, true);
+  if (!custom.ok) {
+    // A missing custom/config.toml is absorbed into `ok: true` above (it's
+    // optional) — reaching here means it exists but failed to read/parse.
+    console.warn(`syncPersonas: failed to read/parse ${customPath}; ignoring overrides`);
+  }
   const customValue = custom.ok ? custom.value : {};
 
   const merged = deepMerge(base.value, customValue);
   const agents = extractAgents(merged);
 
-  repo.upsertMany(agents);
-  repo.markRemoved(agents.map((agent) => agent.agentSkillId));
+  try {
+    repo.upsertMany(agents);
+    repo.markRemoved(agents.map((agent) => agent.agentSkillId));
+  } catch (err) {
+    // A DB write failure (locked file, disk full) here must not crash app
+    // boot — log and leave the catalog in whatever state the last
+    // successful sync left it, same posture as a config read/parse failure.
+    console.warn('syncPersonas: failed to write persona catalog', err);
+  }
 }

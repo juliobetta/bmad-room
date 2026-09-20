@@ -34,12 +34,14 @@ export interface PersonaRow {
  * via a partial unique index, so future `kind='channel'` rows (no
  * `personaId`) are unaffected.
  */
+export type ThreadStatus = 'idle' | 'working' | 'needs-input' | 'stopped';
+
 export interface ThreadRow {
   id: string;
   projectId: string;
   personaId: string | null;
   kind: 'dm' | 'channel';
-  status: string;
+  status: ThreadStatus;
   createdAt: string;
 }
 

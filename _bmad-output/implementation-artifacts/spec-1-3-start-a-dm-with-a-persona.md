@@ -98,6 +98,25 @@ context: ['{project-root}/_bmad-output/implementation-artifacts/epic-1-context.m
 - `false` — [edge-case-hunter] "POST route DB errors propagate as unformatted 500": refuted — this exactly mirrors the already-reviewed, accepted pattern in `POST /api/projects` (`createProject` also rethrows unexpected errors uncaught); not a regression introduced by this diff.
 - `false` — [edge-case-hunter] "`upsertMany` always rewrites `synced_at`, contradicting the 'row is unchanged' AC": refuted — `synced_at` is sync-bookkeeping metadata, not business data; the AC's "unchanged" intent (and its own test) concerns `name`/`title`/`icon`/`description`/`module`/`status`, all of which correctly stay identical.
 
+### Review Findings
+
+- [x] [Review][Decision] Confirm intended scope of the "disabled/removed indicator" AC for a removed persona — `PersonaSidebar` keeps the row clickable (dimmed via opacity, not `disabled`) per a documented Implementation Notes trade-off, so an existing thread for a removed persona stays reachable. Confirm whether "disabled" was meant to describe only the not-yet-existing composer, or also the list row itself. [src/components/persona-sidebar.tsx] — resolved: composer-only; current row behavior (clickable, dimmed) is correct as implemented, no code change.
+- [x] [Review][Patch] Add route-level test coverage for `GET /api/personas` — fixed: added `src/app/api/personas/route.spec.ts`.
+- [x] [Review][Patch] Guard `syncPersonas`'s DB write step (`repo.upsertMany`/`repo.markRemoved`) against a thrown DB error — fixed: wrapped both calls in a try/catch in `src/lib/personas.ts` that logs and leaves the catalog as-is on failure, same posture as the config read/parse failure path.
+- [x] [Review][Patch] Warn (and add test coverage) when `_bmad/custom/config.toml` fails to read/parse — fixed: `syncPersonas` now warns on a custom-config failure distinct from a merely-missing file, and `personas.spec.ts` covers it.
+- [x] [Review][Patch] Type `Thread.status`/`ThreadRow.status` as a literal union instead of bare `string` — fixed: added `ThreadStatus = 'idle' | 'working' | 'needs-input' | 'stopped'` in `src/persistence/schema.ts`, reused in `src/api/types.ts` and `src/persistence/threads-repo.ts`.
+
+Additionally, from the separate `bmad-code-review` skill pass run after this review: fixed the untrimmed `personaId` used for the persona lookup in `POST /api/projects/[id]/threads` (validated with `.trim()` but looked up untrimmed), deduped the `isUniqueConstraintError` helper shared by `src/lib/projects.ts` and `src/persistence/threads-repo.ts` into `src/persistence/sqlite-errors.ts`, and guarded `syncPersonas` against redundant re-runs across Next dev's hot-reload (mirroring the `db` singleton guard). Deferred (see `deferred-work.md`): no catch-all error handler in the new routes (matches the pre-existing `POST /api/projects` pattern), prepared statements not cached per-instance (matches the pre-existing `ProjectsRepo` pattern), duplicated JSON-body-parsing block across routes, and the removed-persona check living in the route rather than in `ThreadsRepo`.
+- [x] [Review][Defer] Persona-selection/thread-load transitions in the thread panel aren't wrapped in an `aria-live` region [src/app/page.tsx] — deferred: unverified against epic-1-context.md's "status changes" accessibility-floor requirement, since this story introduces no live messages or status changes (status dot is static `idle`); would need confirmation whether pre-message thread-selection transitions are in scope now or only from Story 1.4's live WS events onward. If in scope, severity would be medium.
+
+**Rejected:**
+- `false` — Blind Hunter: "`PersonasRepo.list()`'s alphabetical ordering diverges from TOML/module order" — no spec or code establishes an expected ordering; not a violated requirement.
+- `false` — Blind Hunter: "`GET /threads` doesn't validate a returned thread's `personaId` still resolves to a persona row" — confirmed harmless: personas are only ever soft-removed (`status='removed'`), never deleted, so no dangling reference can occur today.
+- `false` — Blind Hunter: "No `PRAGMA foreign_keys=ON`" — duplicate of an already-refuted claim in the prior triage log; no code path deletes a `Project`/`Persona` row, so no orphan risk exists.
+- `low` — Blind Hunter: "spec's Verification section records no actual command output" — not a code defect; the fix would mean editing the spec/process artifact under review, out of scope for a code patch.
+- `low` — Blind Hunter: "`upsertMany`/`markRemoved` aren't wrapped in one cross-repo transaction" — a crash in the sub-millisecond window between the two calls isn't a realistic everyday-use scenario, and an atomic fix needs a cross-repo transaction wrapper — more than a direct correction.
+- `low` — Acceptance Auditor + Edge Case Hunter: "`markRemoved([])`'s guard silently no-ops a legitimate full-catalog removal" — requires deleting all 12 of the tool's own built-in `[agents.*]` entries to trigger, and a correct fix needs a way to distinguish "empty due to upstream error" from "genuinely empty" — more than a direct correction.
+
 ## Verification
 
 **Commands:**

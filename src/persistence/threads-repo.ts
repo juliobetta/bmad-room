@@ -1,6 +1,7 @@
 import type Database from 'better-sqlite3';
 import { nanoid } from 'nanoid';
-import type { ThreadRow } from './schema';
+import type { ThreadRow, ThreadStatus } from './schema';
+import { isUniqueConstraintError } from './sqlite-errors';
 
 export type Thread = ThreadRow;
 
@@ -9,7 +10,7 @@ interface ThreadSqlRow {
   project_id: string;
   persona_id: string | null;
   kind: 'dm' | 'channel';
-  status: string;
+  status: ThreadStatus;
   created_at: string;
 }
 
@@ -75,11 +76,7 @@ export class ThreadsRepo {
         .run(thread);
       return thread;
     } catch (err) {
-      const isUniqueConstraintError =
-        err instanceof Error &&
-        ((err as { code?: string }).code === 'SQLITE_CONSTRAINT_UNIQUE' ||
-          err.message.includes('UNIQUE constraint failed'));
-      if (isUniqueConstraintError) {
+      if (isUniqueConstraintError(err)) {
         const raced = this.findDm(projectId, personaId);
         if (raced) return raced;
       }

@@ -12,6 +12,7 @@ describe('HTTP routes: GET/POST /api/projects/[id]/threads', () => {
   beforeEach(() => {
     vi.resetModules();
     globalThis.__bmadRoomDb = undefined;
+    globalThis.__bmadRoomPersonasSynced = undefined;
     process.env.BMAD_ROOM_DB_PATH = ':memory:';
   });
 

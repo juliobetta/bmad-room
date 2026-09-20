@@ -30,11 +30,13 @@ export interface Persona {
   syncedAt: string;
 }
 
+export type ThreadStatus = 'idle' | 'working' | 'needs-input' | 'stopped';
+
 export interface Thread {
   id: string;
   projectId: string;
   personaId: string | null;
   kind: 'dm' | 'channel';
-  status: string;
+  status: ThreadStatus;
   createdAt: string;
 }

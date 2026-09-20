@@ -32,14 +32,15 @@ export async function POST(request: Request, { params }: RouteParams): Promise<N
     }
   }
 
-  const personaId =
+  const rawPersonaId =
     typeof body === 'object' && body !== null && 'personaId' in body
       ? (body as { personaId: unknown }).personaId
       : undefined;
 
-  if (typeof personaId !== 'string' || personaId.trim().length === 0) {
+  if (typeof rawPersonaId !== 'string' || rawPersonaId.trim().length === 0) {
     return NextResponse.json({ error: 'personaId is required' }, { status: 422 });
   }
+  const personaId = rawPersonaId.trim();
 
   const project = projectsRepo.findById(projectId);
   if (!project) {
