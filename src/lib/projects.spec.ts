@@ -2,7 +2,7 @@ import { promises as fs } from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
 import Database from 'better-sqlite3';
-import { beforeEach, describe, expect, test, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, test, vi } from 'vitest';
 import { ProjectsRepo } from '@/persistence/projects-repo';
 import { initSchema } from '@/persistence/schema';
 import { createProject, listProjects, validateProjectCheckout } from './projects';
@@ -101,6 +101,10 @@ describe('HTTP routes: GET/POST /api/projects and GET /api/fs/browse', () => {
     vi.resetModules();
     globalThis.__bmadRoomDb = undefined;
     process.env.BMAD_ROOM_DB_PATH = ':memory:';
+  });
+
+  afterEach(() => {
+    delete process.env.BMAD_ROOM_DB_PATH;
   });
 
   test('projects and fs/browse route handlers behave like the old REST layer', async () => {

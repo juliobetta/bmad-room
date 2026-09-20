@@ -63,6 +63,28 @@ context: ['{project-root}/_bmad-output/implementation-artifacts/epic-1-context.m
 - Given `pnpm lint`, `pnpm typecheck`, `pnpm test`, when run from `bmad-room-chat-ui/`, then Biome/`tsc`/Vitest all pass clean.
 - Given a hot-reload in Next dev mode, when `src/app/api/*` modules re-evaluate, then no duplicate `Database` connection is opened against `bmad-room.db`.
 
+### Review Findings
+
+- [x] [Review][Patch] `server.ts`'s new error-handling paths (`.catch` on `prepare()`, `.catch` on `handle()`, `server.on('error')`) have no regression test — a future regression there would ship with `pnpm test` still green [server.ts:14-40] — fixed: extracted the error-handling callbacks into `src/lib/http-server.ts` and added `src/lib/http-server.spec.ts`
+- [x] [Review][Patch] `projects.spec.ts`'s `beforeEach` sets `process.env.BMAD_ROOM_DB_PATH` with no `afterEach` cleanup, a latent test-isolation leak for future spec files [src/lib/projects.spec.ts:100-103] — fixed: added `afterEach` cleanup
+- [x] [Review][Patch] `.gitignore`'s new `.vscode` line has no trailing newline [.gitignore] — fixed
+- [x] [Review][Defer] Error color `#b3261e` is hardcoded as raw hex in three places instead of a design token [src/app/page.tsx:48, src/components/add-project-browser.tsx:109,132] — deferred: pre-existing since before this migration (same hardcoded value was in `App.css`), ported as-is, not introduced by this story
+- [x] [Review][Defer] `server.ts` has no graceful shutdown (SIGINT/SIGTERM) handling for the DB connection [server.ts] — deferred: pre-existing since before this migration (the old `index.ts` had none either)
+
+**Rejected:**
+- `false` — "package-lock.json was never removed": refuted — confirmed removed on the story branch (`git show feature/epic1-story-1-2:package-lock.json` → not found). Artifact of the review diff excluding lock files for size, not a real gap.
+- `false` — "db.ts's globalThis singleton guard has zero production coverage": refuted — the guard is deliberately scoped to non-production because Next.js doesn't hot-reload route modules in production, so there's no re-entry scenario there to protect against or test.
+- `false` — "CORS removal leaves a defense-in-depth gap": refuted — sending no `Access-Control-Allow-Origin` header is a stricter default than the prior fixed-origin allowlist (browsers deny cross-origin reads/preflighted requests with no header at all); non-browser clients were never subject to CORS either before or after.
+- `false` — "Tailwind adoption is only a syntax wrapper since DESIGN.md tokens aren't mapped into the theme": refuted — the spec's own Code Map calls for restyling "against the existing CSS custom-property design tokens," which is exactly what was done; theme-level token mapping was never a requirement.
+- `low` — "`NODE_ENV=production tsx server.ts` uses POSIX-only env syntax, fails on Windows": not worth fixing — single-machine hobby tool run from zsh/macOS; a fix would add a `cross-env` dependency.
+- `low` — "Non-numeric `PORT` makes `server.listen(NaN)` throw before the error handler is attached": not worth fixing — the throw happens inside the `.then()` callback, so it's still caught by the outer `.catch()` and exits cleanly (only the logged message is mislabeled); unlikely misconfiguration in a single-user local tool.
+- `low` — "`handle(req, res)` rejecting after a partial response could throw on `res.end()`": not worth fixing — no current route handler streams partial responses; narrow, undemonstrated scenario whose fix requires new `headersSent`/`writableEnded` guards.
+- `reject` — "`pnpm-workspace.yaml` is claimed in the Tasks checklist/Code Map but doesn't exist": the later move-to-repo-root commit deliberately dropped it (single package, no workspace needed); the only fix is updating the spec's stale checklist/Code Map text.
+- `reject` — "`tailwind.config` is claimed complete in the Tasks checklist but doesn't exist": Tailwind v4's CSS-first config makes a config file unnecessary; the only fix is updating the spec's checklist text.
+- `reject` — "App relocated to the repo root contradicts the spec's Code Map/Tasks/Verification, which target a `bmad-room-chat-ui/` subpackage": the relocation was a deliberate, documented follow-up commit; the only fix is updating the frozen spec's Code Map/Verification sections to match.
+- `reject` — "Verification commands (`pnpm --filter bmad-room-chat-ui ...`) aren't executable as written since there's no workspace": same root cause as above; the only fix is updating the spec's Verification section.
+- `reject` — "Review Triage Log's corruption narrative has no independent evidence": the only fix is editing the spec's own narrative text.
+
 ## Implementation Notes
 
 - App collapsed into `bmad-room-chat-ui/` (no nested `web/`): `src/app` (Next.js App Router + `src/app/api/**/route.ts`), `src/lib` (REST logic, DB singleton), `src/persistence`, `src/components`, `src/state`, `src/api`, plus root `server.ts`.

@@ -1,5 +1,6 @@
 import http from 'node:http';
 import next from 'next';
+import { createRequestListener, handlePrepareFailure, handleServerError } from '@/lib/http-server';
 
 /**
  * Custom server wiring Next's request handler over a plain `http.Server`
@@ -9,6 +10,10 @@ import next from 'next';
  *
  * Still reads `PORT` (unchanged from the old standalone backend) and
  * `BMAD_ROOM_DB_PATH` (consumed by src/lib/db.ts, not this file) env vars.
+ *
+ * The error-handling callbacks below are thin wrappers around
+ * `src/lib/http-server.ts`, which is unit-tested — this file itself runs
+ * top-level side effects on import and can't be exercised directly.
  */
 
 const PORT = Number(process.env.PORT ?? 4317);
@@ -20,24 +25,12 @@ const handle = app.getRequestHandler();
 app
   .prepare()
   .then(() => {
-    const server = http.createServer((req, res) => {
-      handle(req, res).catch((err: unknown) => {
-        console.error('Request handler error:', err);
-        res.statusCode = 500;
-        res.end('Internal server error');
-      });
-    });
+    const server = http.createServer(createRequestListener(handle));
 
-    server.on('error', (err) => {
-      console.error('Server error:', err);
-      process.exit(1);
-    });
+    server.on('error', (err) => handleServerError(err));
 
     server.listen(PORT, () => {
       console.log(`bmad-room-chat-ui listening on http://localhost:${PORT}`);
     });
   })
-  .catch((err: unknown) => {
-    console.error('Failed to prepare Next.js app:', err);
-    process.exit(1);
-  });
+  .catch((err: unknown) => handlePrepareFailure(err));
