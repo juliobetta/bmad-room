@@ -1,7 +1,10 @@
 import path from 'node:path';
 import Database from 'better-sqlite3';
+import { PersonasRepo } from '@/persistence/personas-repo';
 import { ProjectsRepo } from '@/persistence/projects-repo';
 import { initSchema } from '@/persistence/schema';
+import { ThreadsRepo } from '@/persistence/threads-repo';
+import { syncPersonas } from './personas';
 
 /**
  * Module-level `Database` singleton (Code Map: "instantiate the Database
@@ -31,3 +34,10 @@ if (process.env.NODE_ENV !== 'production') {
 }
 
 export const projectsRepo = new ProjectsRepo(db);
+export const personasRepo = new PersonasRepo(db);
+export const threadsRepo = new ThreadsRepo(db);
+
+// Sync the persona catalog from _bmad/config.toml once at module load,
+// mirroring this module's own singleton-on-import pattern (Code Map:
+// "call a new syncPersonas(personasRepo) once after initSchema(db)").
+syncPersonas(personasRepo);

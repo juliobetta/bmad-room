@@ -1,4 +1,4 @@
-import type { ApiErrorBody, BrowseResult, Project } from './types';
+import type { ApiErrorBody, BrowseResult, Persona, Project, Thread } from './types';
 
 export class ApiError extends Error {}
 
@@ -32,4 +32,18 @@ export async function browse(path?: string | null): Promise<BrowseResult> {
   const search = path ? `?path=${encodeURIComponent(path)}` : '';
   const res = await fetch(`/api/fs/browse${search}`);
   return parseJsonOrThrow<BrowseResult>(res);
+}
+
+export async function fetchPersonas(): Promise<Persona[]> {
+  const res = await fetch('/api/personas');
+  return parseJsonOrThrow<Persona[]>(res);
+}
+
+export async function openThread(projectId: string, personaId: string): Promise<Thread> {
+  const res = await fetch(`/api/projects/${encodeURIComponent(projectId)}/threads`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ personaId }),
+  });
+  return parseJsonOrThrow<Thread>(res);
 }
