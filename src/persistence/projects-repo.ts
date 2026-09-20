@@ -27,6 +27,13 @@ export class ProjectsRepo {
     return rows.map(toProject);
   }
 
+  findById(id: string): Project | undefined {
+    const row = this.db.prepare('SELECT id, path, created_at FROM projects WHERE id = ?').get(id) as
+      | ProjectSqlRow
+      | undefined;
+    return row ? toProject(row) : undefined;
+  }
+
   findByPath(path: string): Project | undefined {
     const row = this.db.prepare('SELECT id, path, created_at FROM projects WHERE path = ?').get(path) as
       | ProjectSqlRow

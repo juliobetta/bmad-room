@@ -29,6 +29,18 @@ describe('ProjectsRepo', () => {
     expect(listed[0]).toEqual(project);
   });
 
+  test('findById() finds an existing project by id', () => {
+    const repo = makeRepo();
+    repo.create('/Users/example/repo-a');
+    const created = repo.create('/Users/example/repo-b');
+
+    const found = repo.findById(created.id);
+    expect(found).toEqual(created);
+
+    const notFound = repo.findById('does-not-exist');
+    expect(notFound).toBeUndefined();
+  });
+
   test('findByPath() finds an existing project by exact path', () => {
     const repo = makeRepo();
     repo.create('/Users/example/repo-a');
