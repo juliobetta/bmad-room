@@ -28,8 +28,15 @@ app
   .then(() => {
     const server = http.createServer(createRequestListener(handle));
 
+    // Next's own upgrade handler (dev-mode HMR socket, etc.) — only
+    // available after prepare() resolves. Anything our own handleUpgrade
+    // doesn't recognize as one of our own WS paths gets forwarded here
+    // instead of the socket being destroyed, since this is the only
+    // 'upgrade' listener on the server and Next never gets its own.
+    const nextUpgradeHandler = app.getUpgradeHandler();
+
     server.on('upgrade', (req, socket, head) => {
-      handleUpgrade(req, socket, head);
+      handleUpgrade(req, socket, head, nextUpgradeHandler);
     });
 
     server.on('error', (err) => handleServerError(err));

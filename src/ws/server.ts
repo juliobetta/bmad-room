@@ -79,12 +79,20 @@ function attachPresenceSocket(ws: WebSocket): void {
   });
 }
 
+/** Delegate for any upgrade request this module doesn't own — see `fallback` param below. */
+export type UpgradeFallback = (req: IncomingMessage, socket: Duplex, head: Buffer) => void;
+
 /**
  * Routes a raw HTTP `upgrade` event to the thread channel or the presence
- * channel by `req.url`. Any other path destroys the socket rather than
- * leaving it half-upgraded.
+ * channel by `req.url`. This is the *only* `upgrade` listener on the shared
+ * `http.Server` (`server.ts`), so any path this module doesn't own — e.g.
+ * Next.js dev mode's own `/_next/hmr` HMR socket — must be forwarded to
+ * `fallback` (Next's own `app.getUpgradeHandler()`) rather than destroyed;
+ * otherwise Next's dev-mode HMR/hydration breaks silently for the whole
+ * page, not just live-reload. With no `fallback` (e.g. in tests), an
+ * unrecognized path still destroys the socket.
  */
-export function handleUpgrade(req: IncomingMessage, socket: Duplex, head: Buffer): void {
+export function handleUpgrade(req: IncomingMessage, socket: Duplex, head: Buffer, fallback?: UpgradeFallback): void {
   const rawUrl = req.url ?? '';
   const pathname = rawUrl.split('?')[0] ?? '';
 
@@ -95,9 +103,9 @@ export function handleUpgrade(req: IncomingMessage, socket: Duplex, head: Buffer
     try {
       threadId = decodeURIComponent(threadIdSegment);
     } catch {
-      // Malformed percent-encoding — this listener runs directly on the
-      // raw http `upgrade` event, so an uncaught `URIError` here would
-      // crash the whole process.
+      // Malformed percent-encoding on what already matched our own thread
+      // path — not a foreign request to forward, so still destroy rather
+      // than crash the process with an uncaught `URIError`.
       socket.destroy();
       return;
     }
@@ -116,5 +124,9 @@ export function handleUpgrade(req: IncomingMessage, socket: Duplex, head: Buffer
     return;
   }
 
+  if (fallback) {
+    fallback(req, socket, head);
+    return;
+  }
   socket.destroy();
 }
