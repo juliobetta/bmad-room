@@ -10,7 +10,8 @@
     "start": "NODE_ENV=production tsx server.ts",
     "typecheck": "tsc --noEmit",
     "lint": "biome check .",
-    "test": "vitest run"
+    "test": "vitest run",
+    "postinstall": "node scripts/fix-node-pty-permissions.mjs"
   },
   "dependencies": {
     "@xterm/headless": "6.0.0",
