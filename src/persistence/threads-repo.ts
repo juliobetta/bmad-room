@@ -41,6 +41,18 @@ export class ThreadsRepo {
     return rows.map(toThread);
   }
 
+  findById(id: string): Thread | undefined {
+    const row = this.db.prepare(`SELECT ${SELECT_COLUMNS} FROM threads WHERE id = ?`).get(id) as
+      | ThreadSqlRow
+      | undefined;
+    return row ? toThread(row) : undefined;
+  }
+
+  /** Persists a `Thread.status` transition — the actor's own lifecycle drives every call. */
+  updateStatus(id: string, status: ThreadStatus): void {
+    this.db.prepare('UPDATE threads SET status = ? WHERE id = ?').run(status, id);
+  }
+
   findDm(projectId: string, personaId: string): Thread | undefined {
     const row = this.db
       .prepare(`SELECT ${SELECT_COLUMNS} FROM threads WHERE project_id = ? AND persona_id = ? AND kind = 'dm'`)

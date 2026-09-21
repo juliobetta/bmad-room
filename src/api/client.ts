@@ -1,4 +1,4 @@
-import type { ApiErrorBody, BrowseResult, Persona, Project, Thread } from './types';
+import type { ApiErrorBody, BrowseResult, Message, Persona, Project, Thread } from './types';
 
 export class ApiError extends Error {}
 
@@ -46,4 +46,15 @@ export async function openThread(projectId: string, personaId: string): Promise<
     body: JSON.stringify({ personaId }),
   });
   return parseJsonOrThrow<Thread>(res);
+}
+
+/**
+ * REST bootstrap for a thread's message history, loaded before its WS
+ * connection opens (that connection is opened directly from the
+ * component/state layer, not this REST client — see `state/thread-socket.ts`).
+ */
+export async function fetchMessages(threadId: string, before?: string): Promise<Message[]> {
+  const search = before ? `?before=${encodeURIComponent(before)}` : '';
+  const res = await fetch(`/api/threads/${encodeURIComponent(threadId)}/messages${search}`);
+  return parseJsonOrThrow<Message[]>(res);
 }

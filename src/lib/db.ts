@@ -1,5 +1,6 @@
 import path from 'node:path';
 import Database from 'better-sqlite3';
+import { MessagesRepo } from '@/persistence/messages-repo';
 import { PersonasRepo } from '@/persistence/personas-repo';
 import { ProjectsRepo } from '@/persistence/projects-repo';
 import { initSchema } from '@/persistence/schema';
@@ -38,6 +39,7 @@ if (process.env.NODE_ENV !== 'production') {
 export const projectsRepo = new ProjectsRepo(db);
 export const personasRepo = new PersonasRepo(db);
 export const threadsRepo = new ThreadsRepo(db);
+export const messagesRepo = new MessagesRepo(db);
 
 // Sync the persona catalog from _bmad/config.toml once at module load,
 // mirroring this module's own singleton-on-import pattern (Code Map:

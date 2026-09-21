@@ -1,12 +1,13 @@
 import http from 'node:http';
 import next from 'next';
 import { createRequestListener, handlePrepareFailure, handleServerError } from '@/lib/http-server';
+import { handleUpgrade } from '@/ws/server';
 
 /**
  * Custom server wiring Next's request handler over a plain `http.Server`
- * (rather than `next start`/route handlers alone), so that a future
- * `ws.WebSocketServer` (Story 1.3+) can attach to this same server's
- * `upgrade` event — App Router route handlers can't serve raw WS upgrades.
+ * (rather than `next start`/route handlers alone), so `ws.WebSocketServer`
+ * (Story 1.4) can attach to this same server's `upgrade` event — App
+ * Router route handlers can't serve raw WS upgrades.
  *
  * Still reads `PORT` (unchanged from the old standalone backend) and
  * `BMAD_ROOM_DB_PATH` (consumed by src/lib/db.ts, not this file) env vars.
@@ -26,6 +27,10 @@ app
   .prepare()
   .then(() => {
     const server = http.createServer(createRequestListener(handle));
+
+    server.on('upgrade', (req, socket, head) => {
+      handleUpgrade(req, socket, head);
+    });
 
     server.on('error', (err) => handleServerError(err));
 
