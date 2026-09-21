@@ -18,3 +18,9 @@
 - source_spec: `_bmad-output/implementation-artifacts/spec-1-4-send-a-message-and-get-a-real-grounded-response.md`
   summary: `attachThreadSocket` (`src/ws/server.ts`) captures its `ThreadActor` reference once at WS-connection-open time; after a real pty crash (`ThreadActor.handleCrash` self-deregisters), a stale connection can still drive the old actor instance while a new connection for the same thread gets a fresh one from the registry, so two live `ThreadActor` instances (and potentially two ptys) can briefly coexist for one thread.
   evidence: Verified reachable via a real pty crash plus a second concurrent connection or a fast reconnect before the stale connection's own idle-reap cleans it up (a plain page reload closes the stale WS via `ws.on('close')` first, avoiding it in the common case). Properly closing this requires the WS layer to re-subscribe to whichever actor is current on reconnect — the same resume/reconnect machinery this story's spec explicitly defers to Story 1.9 ("Resume a Conversation After Reopening the App").
+
+## Deferred from: code review of story-1.5 (2026-09-21)
+
+- source_spec: `_bmad-output/implementation-artifacts/spec-1-5-see-tool-calls-and-subagent-work-inline.md`
+  summary: `ThreadSocketStore.handleFrame()`'s `tool-card.update`/`tool-card.close`/`subagent-card.close` cases (`src/state/thread-socket.ts`) find-and-patch an existing `liveMessages` entry by `messageId` and silently no-op if no entry matches — reachable if a socket reconnects mid-turn and misses the corresponding `*.open` event.
+  evidence: Verified via code read: the `.map()` patch is a no-op when no `liveMessages` entry has that `messageId`. This is the identical class of gap `thread-socket.ts`'s own doc comment already accepts for `message.delta`/`message.complete` ("No reconnect/resume-in-flight-stream handling here (Story 1.9)"), not a new defect specific to tool/subagent cards.

@@ -111,6 +111,23 @@ describe('MessagesRepo', () => {
     expect(messages.listByThread(thread.id, { before: 'does-not-exist' })).toEqual([]);
   });
 
+  test('updateContent() patches content in place without inserting a new row', () => {
+    const { messages, thread } = makeThread();
+    const card = messages.create(thread.id, 'tool-card', JSON.stringify({ summary: 'Editing foo.ts', detail: '' }));
+
+    messages.updateContent(card.id, JSON.stringify({ summary: 'Editing foo.ts', detail: 'wrote 10 lines' }));
+
+    const page = messages.listByThread(thread.id);
+    expect(page).toHaveLength(1);
+    expect(page[0]?.id).toBe(card.id);
+    expect(page[0]?.content).toBe(JSON.stringify({ summary: 'Editing foo.ts', detail: 'wrote 10 lines' }));
+  });
+
+  test('updateContent() for an unknown id is a no-op, not a throw', () => {
+    const { messages } = makeThread();
+    expect(() => messages.updateContent('does-not-exist', '{}')).not.toThrow();
+  });
+
   test('listByThread() scopes to the given thread only', () => {
     const { messages, threads, projects, personas } = makeRepos();
     personas.upsertMany([analystAgent]);

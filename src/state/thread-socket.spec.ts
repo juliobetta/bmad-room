@@ -126,6 +126,175 @@ describe('ThreadSocketStore', () => {
     expect(state.liveMessages[0]).toMatchObject({ id: 's1', kind: 'system', content: 'Activation failed' });
   });
 
+  test('tool-card.open appends a tool-card message with the payload messageId/parentMessageId', async () => {
+    const { ThreadSocketStore } = await import('./thread-socket');
+    const store = new ThreadSocketStore('thread-1');
+    latestSocket().emit('message', {
+      data: JSON.stringify({
+        type: 'tool-card.open',
+        threadId: 'thread-1',
+        payload: { messageId: 'tc1', parentMessageId: null, summary: '⏺ Read(src/api/auth.ts)' },
+        ts: 1,
+      }),
+    });
+
+    const state = store.getState();
+    expect(state.liveMessages).toHaveLength(1);
+    expect(state.liveMessages[0]).toMatchObject({ id: 'tc1', kind: 'tool-card', parentMessageId: null });
+    expect(JSON.parse(state.liveMessages[0]?.content ?? '{}')).toEqual({
+      summary: '⏺ Read(src/api/auth.ts)',
+      detail: '',
+    });
+  });
+
+  test('subagent-card.open appends a subagent-card message nested under its parent tool-card', async () => {
+    const { ThreadSocketStore } = await import('./thread-socket');
+    const store = new ThreadSocketStore('thread-1');
+    const ws = latestSocket();
+
+    ws.emit('message', {
+      data: JSON.stringify({
+        type: 'tool-card.open',
+        threadId: 'thread-1',
+        payload: { messageId: 'tc1', parentMessageId: null, summary: '⏺ Read(src/api/auth.ts)' },
+        ts: 1,
+      }),
+    });
+    ws.emit('message', {
+      data: JSON.stringify({
+        type: 'subagent-card.open',
+        threadId: 'thread-1',
+        payload: { messageId: 'sc1', parentMessageId: 'tc1', summary: '⏺ Task(Explore the auth flow)' },
+        ts: 2,
+      }),
+    });
+
+    const state = store.getState();
+    expect(state.liveMessages).toHaveLength(2);
+    expect(state.liveMessages[1]).toMatchObject({ id: 'sc1', kind: 'subagent-card', parentMessageId: 'tc1' });
+  });
+
+  test('tool-card.open uses the payload speakerPersonaId instead of hardcoding null', async () => {
+    const { ThreadSocketStore } = await import('./thread-socket');
+    const store = new ThreadSocketStore('thread-1');
+    latestSocket().emit('message', {
+      data: JSON.stringify({
+        type: 'tool-card.open',
+        threadId: 'thread-1',
+        payload: {
+          messageId: 'tc1',
+          parentMessageId: null,
+          summary: '⏺ Read(src/api/auth.ts)',
+          speakerPersonaId: 'bmad-agent-analyst',
+        },
+        ts: 1,
+      }),
+    });
+
+    const state = store.getState();
+    expect(state.liveMessages[0]).toMatchObject({ id: 'tc1', speakerPersonaId: 'bmad-agent-analyst' });
+  });
+
+  test('tool-card.update patches the existing row in place, preserving its summary', async () => {
+    const { ThreadSocketStore } = await import('./thread-socket');
+    const store = new ThreadSocketStore('thread-1');
+    const ws = latestSocket();
+
+    ws.emit('message', {
+      data: JSON.stringify({
+        type: 'tool-card.open',
+        threadId: 'thread-1',
+        payload: { messageId: 'tc1', parentMessageId: null, summary: '⏺ Read(src/api/auth.ts)' },
+        ts: 1,
+      }),
+    });
+    ws.emit('message', {
+      data: JSON.stringify({
+        type: 'tool-card.update',
+        threadId: 'thread-1',
+        payload: { messageId: 'tc1', detail: 'Read 120 lines' },
+        ts: 2,
+      }),
+    });
+
+    const state = store.getState();
+    expect(state.liveMessages).toHaveLength(1);
+    expect(JSON.parse(state.liveMessages[0]?.content ?? '{}')).toEqual({
+      summary: '⏺ Read(src/api/auth.ts)',
+      detail: 'Read 120 lines',
+    });
+  });
+
+  test('tool-card.close patches content without inserting a new row', async () => {
+    const { ThreadSocketStore } = await import('./thread-socket');
+    const store = new ThreadSocketStore('thread-1');
+    const ws = latestSocket();
+
+    ws.emit('message', {
+      data: JSON.stringify({
+        type: 'tool-card.open',
+        threadId: 'thread-1',
+        payload: { messageId: 'tc1', parentMessageId: null, summary: '⏺ Read(src/api/auth.ts)' },
+        ts: 1,
+      }),
+    });
+    ws.emit('message', {
+      data: JSON.stringify({
+        type: 'tool-card.close',
+        threadId: 'thread-1',
+        payload: { messageId: 'tc1', detail: 'Read 120 lines (2.1s)' },
+        ts: 2,
+      }),
+    });
+
+    const state = store.getState();
+    expect(state.liveMessages).toHaveLength(1);
+    expect(JSON.parse(state.liveMessages[0]?.content ?? '{}')).toEqual({
+      summary: '⏺ Read(src/api/auth.ts)',
+      detail: 'Read 120 lines (2.1s)',
+    });
+  });
+
+  test('subagent-card.close patches the subagent row without touching its parent tool-card', async () => {
+    const { ThreadSocketStore } = await import('./thread-socket');
+    const store = new ThreadSocketStore('thread-1');
+    const ws = latestSocket();
+
+    ws.emit('message', {
+      data: JSON.stringify({
+        type: 'tool-card.open',
+        threadId: 'thread-1',
+        payload: { messageId: 'tc1', parentMessageId: null, summary: '⏺ Read(src/api/auth.ts)' },
+        ts: 1,
+      }),
+    });
+    ws.emit('message', {
+      data: JSON.stringify({
+        type: 'subagent-card.open',
+        threadId: 'thread-1',
+        payload: { messageId: 'sc1', parentMessageId: 'tc1', summary: '⏺ Task(Explore the auth flow)' },
+        ts: 2,
+      }),
+    });
+    ws.emit('message', {
+      data: JSON.stringify({
+        type: 'subagent-card.close',
+        threadId: 'thread-1',
+        payload: { messageId: 'sc1', detail: 'Done (3m 12s)' },
+        ts: 3,
+      }),
+    });
+
+    const state = store.getState();
+    const tool = state.liveMessages.find((m) => m.id === 'tc1');
+    const subagent = state.liveMessages.find((m) => m.id === 'sc1');
+    expect(JSON.parse(tool?.content ?? '{}')).toEqual({ summary: '⏺ Read(src/api/auth.ts)', detail: '' });
+    expect(JSON.parse(subagent?.content ?? '{}')).toEqual({
+      summary: '⏺ Task(Explore the auth flow)',
+      detail: 'Done (3m 12s)',
+    });
+  });
+
   test('status frame updates status', async () => {
     const { ThreadSocketStore } = await import('./thread-socket');
     const store = new ThreadSocketStore('thread-1');

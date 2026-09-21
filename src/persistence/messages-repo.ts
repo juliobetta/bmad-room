@@ -70,6 +70,15 @@ export class MessagesRepo {
   }
 
   /**
+   * Patches an existing row's `content` in place — no new row, no other
+   * column touched. Backs `tool-card`/`subagent-card` `*.update`/`*.close`
+   * classification (Story 1.5): only `*.open` ever calls `create()`.
+   */
+  updateContent(id: string, content: string): void {
+    this.db.prepare('UPDATE messages SET content = ? WHERE id = ?').run(content, id);
+  }
+
+  /**
    * Newest-page-first pagination: `before` (a message id) returns the
    * `limit` messages immediately preceding it by `created_at`; omitted,
    * returns the newest `limit` messages. Callers reverse the page to
