@@ -76,4 +76,29 @@ describe('ThreadsRepo', () => {
     const project = projects.create('/Users/example/repo');
     expect(threads.findDm(project.id, 'bmad-agent-analyst')).toBeUndefined();
   });
+
+  test('findById() returns undefined for an unknown thread id', () => {
+    const { threads } = makeRepos();
+    expect(threads.findById('does-not-exist')).toBeUndefined();
+  });
+
+  test('findById() returns the thread matching that id', () => {
+    const { threads, projects, personas } = makeRepos();
+    personas.upsertMany([analystAgent]);
+    const project = projects.create('/Users/example/repo');
+    const created = threads.findOrCreateDm(project.id, 'bmad-agent-analyst');
+
+    expect(threads.findById(created.id)).toEqual(created);
+  });
+
+  test('updateStatus() persists a new status for the given thread', () => {
+    const { threads, projects, personas } = makeRepos();
+    personas.upsertMany([analystAgent]);
+    const project = projects.create('/Users/example/repo');
+    const created = threads.findOrCreateDm(project.id, 'bmad-agent-analyst');
+
+    threads.updateStatus(created.id, 'stopped');
+
+    expect(threads.findById(created.id)?.status).toBe('stopped');
+  });
 });

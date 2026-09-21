@@ -45,6 +45,25 @@ export interface ThreadRow {
   createdAt: string;
 }
 
+/**
+ * `Message` entity. `kind='text'|'system'` are written by this story;
+ * `'tool-card'|'subagent-card'` are schema-ready for Story 1.5.
+ * `speakerPersonaId=null` means the message was authored by the user.
+ * `parentMessageId` links a card's follow-up updates back to the row
+ * minted at `*.open` time (Story 1.5) — unused by this story's rows.
+ */
+export type MessageKind = 'text' | 'tool-card' | 'subagent-card' | 'system';
+
+export interface MessageRow {
+  id: string;
+  threadId: string;
+  speakerPersonaId: string | null;
+  kind: MessageKind;
+  parentMessageId: string | null;
+  content: string;
+  createdAt: string;
+}
+
 export function initSchema(db: Database.Database): void {
   db.pragma('journal_mode = WAL');
   db.exec(`
@@ -77,5 +96,18 @@ export function initSchema(db: Database.Database): void {
     CREATE UNIQUE INDEX IF NOT EXISTS threads_project_persona_dm_unique
       ON threads(project_id, persona_id)
       WHERE kind = 'dm';
+
+    CREATE TABLE IF NOT EXISTS messages (
+      id TEXT PRIMARY KEY,
+      thread_id TEXT NOT NULL REFERENCES threads(id),
+      speaker_persona_id TEXT REFERENCES personas(agent_skill_id),
+      kind TEXT NOT NULL CHECK (kind IN ('text', 'tool-card', 'subagent-card', 'system')),
+      parent_message_id TEXT REFERENCES messages(id),
+      content TEXT NOT NULL,
+      created_at TEXT NOT NULL
+    );
+
+    CREATE INDEX IF NOT EXISTS messages_thread_created_at
+      ON messages(thread_id, created_at);
   `);
 }

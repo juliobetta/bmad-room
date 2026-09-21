@@ -40,3 +40,15 @@ export interface Thread {
   status: ThreadStatus;
   createdAt: string;
 }
+
+export type MessageKind = 'text' | 'tool-card' | 'subagent-card' | 'system';
+
+export interface Message {
+  id: string;
+  threadId: string;
+  speakerPersonaId: string | null;
+  kind: MessageKind;
+  parentMessageId: string | null;
+  content: string;
+  createdAt: string;
+}
