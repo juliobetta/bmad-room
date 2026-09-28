@@ -52,4 +52,36 @@ describe('classifyLine', () => {
       text: 'erroneous input handling',
     });
   });
+
+  test('classifies a tool-invocation line as tool-open', () => {
+    expect(classifyLine('⏺ Read(src/api/auth.ts)')).toEqual({
+      kind: 'tool-open',
+      summary: '⏺ Read(src/api/auth.ts)',
+    });
+  });
+
+  test('classifies a Task(...) invocation line as subagent-open', () => {
+    expect(classifyLine('⏺ Task(Explore the auth flow)')).toEqual({
+      kind: 'subagent-open',
+      summary: '⏺ Task(Explore the auth flow)',
+    });
+  });
+
+  test('classifies an indented continuation line without a duration suffix as card-update', () => {
+    expect(classifyLine('  ⎿  Read 120 lines')).toEqual({
+      kind: 'card-update',
+      text: 'Read 120 lines',
+    });
+  });
+
+  test('classifies an indented continuation line with a duration suffix as card-close', () => {
+    expect(classifyLine('  ⎿  Read 120 lines (2.1s)')).toEqual({
+      kind: 'card-close',
+      text: 'Read 120 lines (2.1s)',
+    });
+    expect(classifyLine('  ⎿  Done (450ms)')).toEqual({
+      kind: 'card-close',
+      text: 'Done (450ms)',
+    });
+  });
 });

@@ -2,6 +2,7 @@
 
 import { useEffect, useMemo, useSyncExternalStore } from 'react';
 import type { Message, MessageKind, ThreadStatus } from '@/api/types';
+import { parseCardContent } from '@/parsing/card-content';
 
 /**
  * WS connection lifecycle keyed on `thread?.id` (mirrors the REST-fetch
@@ -152,6 +153,42 @@ export class ThreadSocketStore {
           createdAt: new Date().toISOString(),
         };
         this.setState({ liveMessages: [...this.state.liveMessages, message] });
+        return;
+      }
+      case 'tool-card.open':
+      case 'subagent-card.open': {
+        const p = payload as {
+          messageId: string;
+          parentMessageId: string | null;
+          summary: string;
+          speakerPersonaId: string | null;
+        };
+        const message: Message = {
+          id: p.messageId,
+          threadId: this.threadId,
+          speakerPersonaId: p.speakerPersonaId,
+          kind: type === 'tool-card.open' ? 'tool-card' : 'subagent-card',
+          parentMessageId: p.parentMessageId,
+          content: JSON.stringify({ summary: p.summary, detail: '' }),
+          createdAt: new Date().toISOString(),
+        };
+        this.setState({ liveMessages: [...this.state.liveMessages, message] });
+        return;
+      }
+      case 'tool-card.update':
+      case 'tool-card.close':
+      case 'subagent-card.close': {
+        // Patches the row minted at `*.open` in place (Boundaries: only
+        // `*.open` inserts a row) — no precedent elsewhere in this file for
+        // finding-and-patching an existing `liveMessages` entry.
+        const p = payload as { messageId: string; detail: string };
+        this.setState({
+          liveMessages: this.state.liveMessages.map((message) => {
+            if (message.id !== p.messageId) return message;
+            const { summary } = parseCardContent(message.content);
+            return { ...message, content: JSON.stringify({ summary, detail: p.detail }) };
+          }),
+        });
         return;
       }
       default:

@@ -1,10 +1,11 @@
 import { promises as fs } from 'node:fs';
+import os from 'node:os';
 import path from 'node:path';
 
 /**
  * Project activation (AD-2 / Epic 1 Context Technical Decisions): the only
  * module that establishes a project's pty cwd. Run before any pty spawns
- * for a project's thread. Three responsibilities, in order:
+ * for a project's thread. Four responsibilities, in order:
  *
  *   1. Re-verify the project's checkout is still real (it may have been
  *      moved/deleted since `Project.path` was written) — never trust the
@@ -16,6 +17,11 @@ import path from 'node:path';
  *   3. Register `_bmad` in that project's `.git/info/exclude` — never a
  *      committed `.gitignore` — so the overlay never shows up as an
  *      untracked file in the user's real project.
+ *   4. Pre-accept the CLI's one-time workspace-trust dialog for this path
+ *      in `~/.claude.json` — `node-pty` gives the spawned `claude` a real
+ *      TTY (the dialog's own non-interactive-mode skip, `-p`/piped stdout,
+ *      doesn't apply), so a brand-new project would otherwise hang forever
+ *      waiting for a keypress nothing ever sends.
  *
  * Returns a discriminated result mirroring `src/lib/projects.ts`'s
  * `CheckoutValidation` shape. On `{ok:false}`, the caller (`ThreadActor`)
@@ -159,9 +165,57 @@ async function ensureGitExclude(projectPath: string): Promise<ActivateProjectRes
   return null;
 }
 
+/**
+ * Marks `projectPath` as trust-accepted in the CLI's own per-project config
+ * (`~/.claude.json`'s `projects[path].hasTrustDialogAccepted`) — the same
+ * flag an interactive "Do you trust this folder?" acceptance would set.
+ * Read-modify-write of the whole file: only that one field is ever added
+ * or changed, every other key (auth, other projects' entries, etc.) passes
+ * through untouched. Fails closed — an unreadable/malformed config is
+ * reported rather than risking silently clobbering the user's real config.
+ */
+async function ensureWorkspaceTrusted(
+  projectPath: string,
+  claudeConfigPath: string,
+): Promise<ActivateProjectResult | null> {
+  let raw: string;
+  try {
+    raw = await fs.readFile(claudeConfigPath, 'utf-8');
+  } catch (err) {
+    if ((err as NodeJS.ErrnoException).code !== 'ENOENT') {
+      return { ok: false, reason: `Failed to read ${claudeConfigPath}: ${(err as Error).message}` };
+    }
+    raw = '{}'; // no config yet — first-ever `claude` launch on this machine.
+  }
+
+  let config: Record<string, unknown>;
+  try {
+    config = JSON.parse(raw);
+  } catch (err) {
+    return { ok: false, reason: `${claudeConfigPath} is not valid JSON: ${(err as Error).message}` };
+  }
+
+  const projects =
+    config.projects && typeof config.projects === 'object'
+      ? (config.projects as Record<string, Record<string, unknown> | undefined>)
+      : {};
+  const existingEntry = projects[projectPath];
+  if (existingEntry?.hasTrustDialogAccepted === true) return null; // already trusted.
+
+  config.projects = { ...projects, [projectPath]: { ...existingEntry, hasTrustDialogAccepted: true } };
+
+  try {
+    await fs.writeFile(claudeConfigPath, `${JSON.stringify(config, null, 2)}\n`, 'utf-8');
+  } catch (err) {
+    return { ok: false, reason: `Failed to write ${claudeConfigPath}: ${(err as Error).message}` };
+  }
+  return null;
+}
+
 export async function activateProject(
   projectPath: string,
   bmadRoomRoot: string = process.cwd(),
+  claudeConfigPath: string = path.join(os.homedir(), '.claude.json'),
 ): Promise<ActivateProjectResult> {
   const gitDir = path.join(projectPath, '.git');
   if (!(await isDirectory(projectPath))) {
@@ -176,6 +230,9 @@ export async function activateProject(
 
   const excludeResult = await ensureGitExclude(projectPath);
   if (excludeResult) return excludeResult;
+
+  const trustResult = await ensureWorkspaceTrusted(projectPath, claudeConfigPath);
+  if (trustResult) return trustResult;
 
   return { ok: true, cwd: projectPath };
 }

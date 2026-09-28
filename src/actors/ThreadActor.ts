@@ -16,13 +16,28 @@ const DEFAULT_IDLE_REAP_MS = 30 * 60 * 1000;
 
 type Listener = (event: WsEvent) => void;
 
+/**
+ * Tracks a `tool-card`/`subagent-card` `Message` row between its `*.open`
+ * classification and its `*.close` one (mirrors `streamingText`'s role for
+ * plain-text turns). A stack, LIFO: a subagent spawned mid-tool-call nests
+ * under whichever tool-card is currently open, and `card-close` — which
+ * the classifier reports without saying which kind it closes (Code Map) —
+ * always resolves to the most-recently-opened card.
+ */
+interface OpenCard {
+  id: string;
+  kind: 'tool-card' | 'subagent-card';
+  summary: string;
+  detail: string;
+}
+
 export interface ThreadActorDeps {
   activateProject: typeof activateProjectDefault;
   spawnClaude: typeof spawnClaudeDefault;
   threadsRepo: Pick<ThreadsRepo, 'findById' | 'updateStatus'>;
   projectsRepo: Pick<ProjectsRepo, 'findById'>;
   personasRepo: Pick<PersonasRepo, 'findById'>;
-  messagesRepo: Pick<MessagesRepo, 'create'>;
+  messagesRepo: Pick<MessagesRepo, 'create' | 'updateContent'>;
   idleReapMs: number;
 }
 
@@ -50,6 +65,7 @@ export class ThreadActor {
   private idleTimer: ReturnType<typeof setTimeout> | null = null;
   private inFlightTurn = false;
   private streamingText = '';
+  private readonly openCards: OpenCard[] = [];
   private lastBroadcastStatus: ThreadStatus | null = null;
   private deregistered = false;
   // Guards against two concurrent `sendMessage()` calls both observing
@@ -186,6 +202,7 @@ export class ThreadActor {
         return;
       case 'status':
         if (classified.status === 'idle') {
+          this.closeAllOpenCards();
           this.completeTurnIfAny(thread);
           this.setStatus('idle');
         } else {
@@ -204,14 +221,60 @@ export class ThreadActor {
         return;
       }
       case 'message': {
+        this.emitMessageLine(classified.text, thread);
+        return;
+      }
+      case 'tool-open': {
         this.inFlightTurn = true;
-        this.streamingText = this.streamingText ? `${this.streamingText}\n${classified.text}` : classified.text;
-        this.broadcast({
-          type: 'message.delta',
-          threadId: this.threadId,
-          payload: { speakerPersonaId: thread.personaId, content: this.streamingText },
-          ts: Date.now(),
-        });
+        // Text streamed before this card happened first — commit it as its
+        // own message now so it lands (in the DB and in live state) ahead
+        // of the card's row, instead of after it once the turn goes idle.
+        this.commitStreamingText(thread);
+        // A top-level tool-card's parentMessageId is always null (Boundaries).
+        this.openCard('tool-card', classified.summary, thread, null);
+        return;
+      }
+      case 'subagent-open': {
+        this.inFlightTurn = true;
+        this.commitStreamingText(thread);
+        // Nests under the currently-open tool-card, if any; otherwise a
+        // top-level card (I/O matrix: "no tool-card open" edge case).
+        const parent = this.openCards.at(-1);
+        const parentMessageId = parent?.kind === 'tool-card' ? parent.id : null;
+        this.openCard('subagent-card', classified.summary, thread, parentMessageId);
+        return;
+      }
+      case 'card-update': {
+        const top = this.openCards.at(-1);
+        // Only `tool-card.update` exists in the WS vocabulary (Code Map) —
+        // a subagent-card on top just accumulates detail silently until it
+        // closes, since there's no event type to carry an interim update.
+        if (!top) {
+          // No card open: this line isn't card content after all — treat
+          // it as an ordinary streamed-text line instead of dropping it.
+          this.emitMessageLine(classified.text, thread);
+          return;
+        }
+        top.detail = top.detail ? `${top.detail}\n${classified.text}` : classified.text;
+        this.persistCardContent(top);
+        if (top.kind === 'tool-card') {
+          this.broadcast({
+            type: 'tool-card.update',
+            threadId: this.threadId,
+            payload: { messageId: top.id, detail: top.detail },
+            ts: Date.now(),
+          });
+        }
+        return;
+      }
+      case 'card-close': {
+        if (!this.openCards.length) {
+          // No card open: this line isn't card content after all — treat
+          // it as an ordinary streamed-text line instead of dropping it.
+          this.emitMessageLine(classified.text, thread);
+          return;
+        }
+        this.closeTopCard(classified.text);
         return;
       }
       default:
@@ -219,9 +282,26 @@ export class ThreadActor {
     }
   }
 
-  private completeTurnIfAny(thread: Thread): void {
-    if (!this.inFlightTurn || this.streamingText.trim().length === 0) {
-      this.inFlightTurn = false;
+  /** Appends a streamed-text line to `streamingText` and broadcasts the growing delta. */
+  private emitMessageLine(text: string, thread: Thread): void {
+    this.inFlightTurn = true;
+    this.streamingText = this.streamingText ? `${this.streamingText}\n${text}` : text;
+    this.broadcast({
+      type: 'message.delta',
+      threadId: this.threadId,
+      payload: { speakerPersonaId: thread.personaId, content: this.streamingText },
+      ts: Date.now(),
+    });
+  }
+
+  /**
+   * Persists and broadcasts any accumulated `streamingText` as a `text`
+   * message (no-op if there is none), same as `completeTurnIfAny` but
+   * without touching `inFlightTurn` — used mid-turn, when a tool/subagent
+   * card is about to open and the turn is still running.
+   */
+  private commitStreamingText(thread: Thread): void {
+    if (this.streamingText.trim().length === 0) {
       this.streamingText = '';
       return;
     }
@@ -234,6 +314,54 @@ export class ThreadActor {
       ts: Date.now(),
     });
     this.streamingText = '';
+  }
+
+  /** Mints a card's `Message` row (before its `*.open` broadcast, Boundaries) and tracks it as open. */
+  private openCard(kind: OpenCard['kind'], summary: string, thread: Thread, parentMessageId: string | null): void {
+    const content = JSON.stringify({ summary, detail: '' });
+    const message = this.deps.messagesRepo.create(this.threadId, kind, content, thread.personaId, parentMessageId);
+    this.openCards.push({ id: message.id, kind, summary, detail: '' });
+    this.broadcast({
+      type: kind === 'tool-card' ? 'tool-card.open' : 'subagent-card.open',
+      threadId: this.threadId,
+      payload: { messageId: message.id, parentMessageId, summary, speakerPersonaId: thread.personaId },
+      ts: Date.now(),
+    } as WsEvent);
+  }
+
+  private persistCardContent(card: OpenCard): void {
+    this.deps.messagesRepo.updateContent(card.id, JSON.stringify({ summary: card.summary, detail: card.detail }));
+  }
+
+  /** Pops and finalizes the most-recently-opened card, if any (no-op otherwise). */
+  private closeTopCard(trailingText?: string): void {
+    const top = this.openCards.pop();
+    if (!top) return;
+    if (trailingText) {
+      top.detail = top.detail ? `${top.detail}\n${trailingText}` : trailingText;
+    }
+    this.persistCardContent(top);
+    this.broadcast({
+      type: top.kind === 'tool-card' ? 'tool-card.close' : 'subagent-card.close',
+      threadId: this.threadId,
+      payload: { messageId: top.id, detail: top.detail },
+      ts: Date.now(),
+    } as WsEvent);
+  }
+
+  /** Best-effort finalize of every still-open card, e.g. on crash/idle-reap/lingering-flush. */
+  private closeAllOpenCards(): void {
+    while (this.openCards.length > 0) {
+      this.closeTopCard();
+    }
+  }
+
+  private completeTurnIfAny(thread: Thread): void {
+    if (!this.inFlightTurn) {
+      this.streamingText = '';
+      return;
+    }
+    this.commitStreamingText(thread);
     this.inFlightTurn = false;
   }
 
@@ -241,13 +369,15 @@ export class ThreadActor {
    * Flushes the terminal buffer's not-yet-settled trailing line (the one
    * still on the live cursor row, which would otherwise never be
    * classified/emitted since no further chunk is coming to push it past
-   * the cursor) and, if that leaves any lingering `streamingText`,
-   * persists/broadcasts it as the turn's final message instead of
-   * silently discarding it. Must be called before the terminal buffer is
-   * disposed.
+   * the cursor), best-effort finalizes any card still open (Story 1.5 —
+   * crash/idle-reap/lingering-flush must not leave a card open forever)
+   * and, if that leaves any lingering `streamingText`, persists/broadcasts
+   * it as the turn's final message instead of silently discarding it.
+   * Must be called before the terminal buffer is disposed.
    */
   private flushLingeringTurn(): void {
     this.terminalBuffer?.flush();
+    this.closeAllOpenCards();
     if (this.streamingText.trim().length === 0) {
       this.streamingText = '';
       this.inFlightTurn = false;
