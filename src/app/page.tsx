@@ -87,8 +87,14 @@ export default function Page() {
     };
   }, [threadId]);
 
-  const historyIds = new Set(history.map((m) => m.id));
-  const displayedMessages = [...history, ...socket.liveMessages.filter((m) => !historyIds.has(m.id))];
+  // A `liveMessages` entry can share an id with a `history` entry — e.g. a
+  // tool/subagent card whose `*.open` row was already REST-fetched before
+  // its `*.update`/`*.close` patch arrived over the socket. Overlay by id
+  // (keeping `history`'s ordering) rather than excluding the live entry,
+  // so that patch is never silently dropped.
+  const messagesById = new Map(history.map((m) => [m.id, m] as const));
+  for (const message of socket.liveMessages) messagesById.set(message.id, message);
+  const displayedMessages = [...messagesById.values()];
 
   const handleCreated = (project: Project) => {
     setProjects((prev) => [...prev, project]);

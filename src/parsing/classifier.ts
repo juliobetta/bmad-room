@@ -23,7 +23,7 @@ export type ClassifiedLine =
   | { kind: 'tool-open'; summary: string }
   | { kind: 'subagent-open'; summary: string }
   | { kind: 'card-update'; text: string }
-  | { kind: 'card-close'; text?: string }
+  | { kind: 'card-close'; text: string }
   | { kind: 'ignore' };
 
 // A spinner glyph (braille spinner frames, or common ASCII/unicode

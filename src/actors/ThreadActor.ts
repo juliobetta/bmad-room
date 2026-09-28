@@ -269,7 +269,9 @@ export class ThreadActor {
       }
       case 'card-close': {
         if (!this.openCards.length) {
-          if (classified.text) this.emitMessageLine(classified.text, thread);
+          // No card open: this line isn't card content after all — treat
+          // it as an ordinary streamed-text line instead of dropping it.
+          this.emitMessageLine(classified.text, thread);
           return;
         }
         this.closeTopCard(classified.text);
